@@ -1,8 +1,0 @@
-Found 464 assembly files
-First few entries in assembly list:
-Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand	/home/phemarajata/nextflow_tapir_poppunk_snp/work/79/81f65547700a34da0ecd71d0d06ac6/Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand.fasta
-Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand	/home/phemarajata/nextflow_tapir_poppunk_snp/work/79/81f65547700a34da0ecd71d0d06ac6/Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand.fasta
-Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam	/home/phemarajata/nextflow_tapir_poppunk_snp/work/79/81f65547700a34da0ecd71d0d06ac6/Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta
-Processing 464 samples
-Large dataset detected (464 samples). Using conservative parameters.
-Creating PopPUNK database...

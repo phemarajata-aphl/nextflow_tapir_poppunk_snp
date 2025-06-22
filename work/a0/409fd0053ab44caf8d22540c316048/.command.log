@@ -1,28 +1,0 @@
-Initial memory status:
-               total        used        free      shared  buff/cache   available
-Mem:           7.7Gi       664Mi       3.7Gi       0.0Ki       3.3Gi       6.7Gi
-Swap:          1.0Gi          0B       1.0Gi
-Found 334 assembly files
-First few entries in assembly list:
-Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta
-Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas.fasta
-Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica.fasta
-Processing 334 samples
-Standard dataset size. Using default parameters.
-Memory before database creation:
-               total        used        free      shared  buff/cache   available
-Mem:           7.7Gi       538Mi       3.9Gi       0.0Ki       3.3Gi       6.8Gi
-Swap:          1.0Gi          0B       1.0Gi
-Creating PopPUNK database...
-PopPUNK (POPulation Partitioning Using Nucleotide Kmers)
-	(with backend: sketchlib v2.1.4
-	 sketchlib: /opt/conda/envs/poppunk-env/lib/python3.12/site-packages/pp_sketchlib.cpython-312-x86_64-linux-gnu.so)
-
-Graph-tools OpenMP parallelisation enabled: with 8 threads
-Mode: Building new database from input sequences
-Sketching 334 genomes using 8 thread(s)
-Progress (CPU): 0 / 334Progress (CPU): 3 / 334Progress (CPU): 12 / 334Progress (CPU): 18 / 334Progress (CPU): 28 / 334Progress (CPU): 35 / 334Progress (CPU): 44 / 334Progress (CPU): 52 / 334Progress (CPU): 57 / 334Progress (CPU): 66 / 334Progress (CPU): 71 / 334Progress (CPU): 79 / 334Progress (CPU): 88 / 334Progress (CPU): 99 / 334Progress (CPU): 105 / 334Progress (CPU): 113 / 334Progress (CPU): 119 / 334Progress (CPU): 124 / 334Progress (CPU): 131 / 334Progress (CPU): 137 / 334Progress (CPU): 144 / 334Progress (CPU): 156 / 334Progress (CPU): 162 / 334Progress (CPU): 167 / 334Progress (CPU): 175 / 334Progress (CPU): 182 / 334Progress (CPU): 189 / 334Progress (CPU): 196 / 334Progress (CPU): 205 / 334Progress (CPU): 211 / 334Progress (CPU): 218 / 334Progress (CPU): 227 / 334Progress (CPU): 235 / 334Progress (CPU): 242 / 334Progress (CPU): 249 / 334Progress (CPU): 257 / 334Progress (CPU): 264 / 334Progress (CPU): 271 / 334Progress (CPU): 275 / 334Progress (CPU): 284 / 334Progress (CPU): 291 / 334Progress (CPU): 304 / 334Progress (CPU): 311 / 334Progress (CPU): 319 / 334Progress (CPU): 325 / 334Progress (CPU): 331 / 334Progress (CPU): 334 / 334
-Writing sketches to file
-Calculating random match chances using Monte Carlo
-Calculating distances using 8 thread(s)
-Progress (CPU): 0.0%Progress (CPU): 0.1%Progress (CPU): 0.2%Progress (CPU): 0.3%Progress (CPU): 0.4%Progress (CPU): 0.5%Progress (CPU): 0.6%Progress (CPU): 0.7%Progress (CPU): 0.8%Progress (CPU): 0.9%Progress (CPU): 1.0%Progress (CPU): 1.1%Progress (CPU): 1.2%Progress (CPU): 1.3%Progress (CPU): 1.4%Progress (CPU): 1.5%Progress (CPU): 1.6%Progress (CPU): 1.7%Progress (CPU): 1.8%Progress (CPU): 1.9%Progress (CPU): 2.0%Progress (CPU): 2.1%Progress (CPU): 2.2%Progress (CPU): 2.3%Progress (CPU): 2.4%Progress (CPU): 2.5%Progress (CPU): 2.6%Progress (CPU): 2.7%Progress (CPU): 2.8%Progress (CPU): 2.9%Progress (CPU): 3.0%Progress (CPU): 3.1%Progress (CPU): 3.2%Progress (CPU): 3.3%Progress (CPU): 3.4%/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/.command.sh: line 66:  1653 Segmentation fault      poppunk --create-db --r-files assembly_list.txt --output poppunk_db --threads 8 $SKETCH_SIZE $MIN_K $MAX_K $EXTRA_PARAMS --overwrite

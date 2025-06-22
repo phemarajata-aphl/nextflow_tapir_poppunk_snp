@@ -1,3 +1,0 @@
-docker: Error response from daemon: Duplicate mount point: /tmp
-
-Run 'docker run --help' for more information

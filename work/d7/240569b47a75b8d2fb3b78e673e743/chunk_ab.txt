@@ -1,1 +1,0 @@
-/home/phemarajata/nextflow_tapir_poppunk_snp/work/17/7e1c84e3b2eb33e3ee9c24b46bdd9a/chunk_ab.txt
