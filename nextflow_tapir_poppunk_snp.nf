@@ -22,8 +22,6 @@
 
 nextflow.enable.dsl=2
 
-
-
 // Help message
 if (params.help) {
     log.info """
@@ -47,8 +45,6 @@ if (params.help) {
     """
     exit 0
 }
-
-
 
 // Process definitions
 process POPPUNK {
@@ -245,5 +241,3 @@ workflow {
         "Completed analysis for cluster ${cluster_id}: ${tree_files.size()} output files"
     }
 }
-
-

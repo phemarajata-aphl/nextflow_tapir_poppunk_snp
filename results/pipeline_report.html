@@ -18,11 +18,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Nextflow workflow report for run id [sharp_jones]">
+  <meta name="description" content="Nextflow workflow report for run id [gigantic_shirley]">
   <meta name="author" content="Paolo Di Tommaso, Phil Ewels">
   <link rel="icon" type="image/png" href="https://www.nextflow.io/img/favicon.png" />
 
-  <title>[sharp_jones] Nextflow Workflow Report</title>
+  <title>[gigantic_shirley] Nextflow Workflow Report</title>
 
   <style type="text/css">
   /*!
@@ -137,7 +137,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
       </ul>
       <span class="navbar-text">
-        [sharp_jones]
+        [gigantic_shirley]
       </span>
     </div>
   </nav>
@@ -146,17 +146,17 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
     <div class="container">
 
       <h1 class="display-3">Nextflow workflow report</h1>
-      <h2 class="text-muted mb-4"><samp>[sharp_jones]</samp> </h2>
+      <h2 class="text-muted mb-4"><samp>[gigantic_shirley]</samp> </h2>
 
       
           <div class="alert alert-danger mb-4">
               <h4>Workflow execution completed unsuccessfully!</h4>
-              <p>The exit status of the task that caused the workflow execution to fail was: <code>125</code>.</p>
+              <p>The exit status of the task that caused the workflow execution to fail was: <code>1</code>.</p>
               <p>The full error message was:</p>
               <pre>Error executing process > 'POPPUNK (PopPUNK_clustering)'
 
 Caused by:
-  Process `POPPUNK (PopPUNK_clustering)` terminated with an error exit status (125)
+  Process `POPPUNK (PopPUNK_clustering)` terminated with an error exit status (1)
 
 
 Command executed:
@@ -208,31 +208,37 @@ Command executed:
   head -5 clusters.csv
 
 Command exit status:
-  125
+  1
 
 Command output:
-  (empty)
+  Found 132 assembly files
 
 Command error:
-  docker: Error response from daemon: Duplicate mount point: /tmp
+  Found 132 assembly files
+  PopPUNK (POPulation Partitioning Using Nucleotide Kmers)
+  	(with backend: sketchlib v2.1.4
+  	 sketchlib: /opt/conda/envs/poppunk-env/lib/python3.12/site-packages/pp_sketchlib.cpython-312-x86_64-linux-gnu.so)
   
-  Run 'docker run --help' for more information
+  Graph-tools OpenMP parallelisation enabled: with 22 threads
+  Mode: Building new database from input sequences
+  Input reference list is misformatted
+  Must contain sample name and file, tab separated
 
 Work dir:
-  /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f
+  /home/phemarajata/nextflow_tapir_poppunk_snp/work/ba/e249c0e747b20d263b1a38c7ae124f
 
 Container:
   staphb/poppunk:2.7.5
 
-Tip: view the complete command output by changing to the process work dir and entering the command `cat .command.out`</pre>
+Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`</pre>
           </div>
       
 
       <dl>
         <dt>Run times</dt>
         <dd>
-          <span id="workflow_start">22-Jun-2025 13:24:54</span> - <span id="workflow_complete">22-Jun-2025 13:24:55</span>
-          (<span id="completed_fromnow"></span>duration: <strong>1.1s</strong>)
+          <span id="workflow_start">22-Jun-2025 13:34:19</span> - <span id="workflow_complete">22-Jun-2025 13:35:11</span>
+          (<span id="completed_fromnow"></span>duration: <strong>52.1s</strong>)
         </dd>
 
         <dl>
@@ -250,7 +256,7 @@ Tip: view the complete command output by changing to the process work dir and en
 
       <dl class="row small">
         <dt class="col-sm-3">CPU-Hours</dt>
-        <dd class="col-sm-9"><samp>(a few seconds)</samp></dd>
+        <dd class="col-sm-9"><samp>0.3 (100% failed)</samp></dd>
 
         <dt class="col-sm-3">Launch directory</dt>
         <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp</samp></dd>
@@ -272,7 +278,7 @@ Tip: view the complete command output by changing to the process work dir and en
         
 
         <dt class="col-sm-3">Workflow session</dt>
-        <dd class="col-sm-9"><code>46a926a6-2a5d-414c-ba51-13f0ae461636</code></dd>
+        <dd class="col-sm-9"><code>01ddd79c-47c7-4bd5-8626-5708e0e5c9f0</code></dd>
 
         
 
@@ -1112,7 +1118,7 @@ $(function() {
 
   // Nextflow report data
   window.data = { "trace":[
-{"task_id":"1","hash":"52\/120c45","native_id":"138896","process":"POPPUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"125","submit":"1750573495522","start":"1750573495583","complete":"1750573495720","duration":"198","realtime":"137","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/52\/120c459ffe2d8921c687c2c5a49d5f","script":"\n    # Create a list file for PopPUNK with full paths\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            echo \"$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 22 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 22 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 22 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"22","memory":"51539607552","disk":"-","time":"-","env":"TMPDIR=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\nNXF_TEMP=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\n","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":137,"min":137,"q1":137,"q2":137,"q3":137,"max":137,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
+{"task_id":"1","hash":"ba\/e249c0","native_id":"139727","process":"POPPUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"1","submit":"1750574060164","start":"1750574060197","complete":"1750574111299","duration":"51135","realtime":"51102","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/ba\/e249c0e747b20d263b1a38c7ae124f","script":"\n    # Create a list file for PopPUNK with full paths\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            echo \"$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 22 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 22 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 22 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"22","memory":"51539607552","disk":"-","time":"-","env":"TMPDIR=.\/tmp\nNXF_TEMP=.\/tmp\n","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":51102,"min":51102,"q1":51102,"q2":51102,"q3":51102,"max":51102,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
 
   </script>
 
