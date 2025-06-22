@@ -114,7 +114,7 @@ echo "Starting pipeline execution on Google Cloud Batch..."
 echo "This may take several hours for large datasets."
 echo ""
 
-nextflow run nextflow_tapir_poppunk_snp.nf \
+./nextflow run nextflow_tapir_poppunk_snp.nf \
     -profile google_batch \
     --input "$INPUT_BUCKET" \
     --resultsDir "$RESULTS_BUCKET" \
