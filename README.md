@@ -1,6 +1,6 @@
 # TAPIR + PopPUNK + Per-Clade SNP Analysis Pipeline
 
-A Nextflow DSL2 pipeline optimized for phylogenetic analysis of bacterial genomes using PopPUNK clustering followed by per-cluster SNP analysis.
+A Nextflow DSL2 pipeline optimized for phylogenetic analysis of bacterial genomes using PopPUNK clustering followed by per-cluster SNP analysis. Supports both local execution and Google Cloud Batch for scalable processing.
 
 ## Overview
 
@@ -15,7 +15,8 @@ This pipeline performs:
 
 ## System Requirements
 
-- **Hardware**: Intel Core Ultra 9 185H (22 threads) with 64GB RAM (optimized for ~400 FASTA files)
+### Local Execution
+- **Hardware**: Multi-core system with 64GB+ RAM (optimized for large datasets)
 - **Software**: 
   - Nextflow (v23+)
   - Docker (running locally)
@@ -25,11 +26,16 @@ This pipeline performs:
     - `staphb/gubbins:3.3.5` - Recombination removal
     - `staphb/iqtree2:2.4.0` - Phylogenetic tree building
 
+### Google Cloud Execution
+- **Google Cloud Project**: `erudite-pod-307018`
+- **Required APIs**: Batch API, Compute Engine API, Cloud Storage API
+- **Permissions**: Batch Job Editor, Compute Instance Admin, Storage Object Admin
+
 ## Usage
 
 ### Basic Usage
 
-**For Ubuntu users (recommended):**
+**For local Ubuntu users (recommended):**
 ```bash
 # First, run the setup script to configure Docker properly
 ./setup_ubuntu_docker.sh
@@ -38,7 +44,19 @@ This pipeline performs:
 nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
 ```
 
-**Standard usage:**
+**For Google Cloud Batch execution:**
+```bash
+# Setup and run on Google Cloud (see GOOGLE_CLOUD_SETUP.md for details)
+./run_google_batch.sh
+
+# Or manually:
+nextflow run nextflow_tapir_poppunk_snp.nf -profile google_batch \
+    --input gs://aphlhq-ngs-gh/nextflow_data/subset_100 \
+    --resultsDir gs://aphlhq-ngs-gh/nextflow_data/subset_100_results \
+    -w gs://aphlhq-ngs-gh/nextflow_work
+```
+
+**Standard local usage:**
 ```bash
 nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./results
 ```
@@ -50,11 +68,17 @@ nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./r
 
 ### Parameters
 - `--input`: Path to directory containing FASTA assemblies (required)
+  - Local: `./assemblies` 
+  - Google Cloud: `gs://bucket-name/path/to/assemblies`
 - `--resultsDir`: Path to output directory (required)
-- `--poppunk_threads`: Threads for PopPUNK (default: 22)
-- `--panaroo_threads`: Threads for Panaroo (default: 16) 
-- `--gubbins_threads`: Threads for Gubbins (default: 8)
-- `--iqtree_threads`: Threads for IQ-TREE (default: 4)
+  - Local: `./results`
+  - Google Cloud: `gs://bucket-name/path/to/results`
+- `--poppunk_threads`: Threads for PopPUNK (default: 8 local, 16 cloud)
+- `--panaroo_threads`: Threads for Panaroo (default: 16 local, 8 cloud) 
+- `--gubbins_threads`: Threads for Gubbins (default: 8 local, 4 cloud)
+- `--iqtree_threads`: Threads for IQ-TREE (default: 4 local, 4 cloud)
+- `--large_dataset_threshold`: Threshold for conservative PopPUNK parameters (default: 400)
+- `--very_large_dataset_threshold`: Threshold for ultra-conservative PopPUNK parameters (default: 450)
 
 ### Example
 ```bash
@@ -62,8 +86,33 @@ nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./r
 nextflow run nextflow_tapir_poppunk_snp.nf \
     --input ./my_assemblies \
     --resultsDir ./my_results \
-    --poppunk_threads 20 \
-    --panaroo_threads 12
+    --poppunk_threads 12 \
+    --panaroo_threads 8
+```
+
+## Execution Profiles
+
+The pipeline supports multiple execution environments:
+
+### Local Execution
+- **`ubuntu_docker`**: Optimized for Ubuntu systems with Docker
+- **`local_tmp`**: Alternative local configuration with explicit temp directories
+- **`standard`**: Default local configuration
+
+### Cloud Execution  
+- **`google_batch`**: Google Cloud Batch execution with automatic scaling
+  - Project: `erudite-pod-307018`
+  - Input: `gs://aphlhq-ngs-gh/nextflow_data/subset_100`
+  - Results: `gs://aphlhq-ngs-gh/nextflow_data/subset_100_results`
+  - Work: `gs://aphlhq-ngs-gh/nextflow_work`
+
+### Profile Usage
+```bash
+# Local Ubuntu
+nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+
+# Google Cloud
+nextflow run nextflow_tapir_poppunk_snp.nf -profile google_batch --input gs://bucket/input --resultsDir gs://bucket/results
 ```
 
 ## Output Structure
@@ -84,12 +133,20 @@ results/
 
 ## Resource Optimization
 
-The pipeline is optimized for your system:
-- **PopPUNK**: 22 threads, 48GB RAM (most resource-intensive)
+### Local Execution
+The pipeline is optimized for large datasets with ultra-conservative settings:
+- **PopPUNK**: 8 threads, 60GB RAM (ultra-conservative for stability)
 - **Panaroo**: 16 threads, 24GB RAM per cluster
 - **Gubbins**: 8 threads, 12GB RAM per cluster  
 - **IQ-TREE**: 4 threads, 6GB RAM per cluster
 - **Queue limit**: 10 concurrent processes to manage memory
+
+### Google Cloud Execution
+- **PopPUNK**: 16 vCPUs, 64GB RAM (n1-highmem-16)
+- **Panaroo**: 8 vCPUs, 32GB RAM (n1-standard-8)
+- **Gubbins**: 4 vCPUs, 16GB RAM (n1-standard-4)
+- **IQ-TREE**: 4 vCPUs, 8GB RAM (n1-standard-4)
+- **Spot instances**: Enabled for cost savings
 
 ## Troubleshooting
 
@@ -106,14 +163,12 @@ If you encounter "Input reference list is misformatted" error:
 - This has been fixed in the latest version
 - PopPUNK requires tab-separated input (sample_name<TAB>file_path)
 - The pipeline now automatically creates properly formatted input files
-- See `POPPUNK_FIX.md` for technical details
 
 #### Segmentation Fault with Large Datasets
 If PopPUNK crashes with "Segmentation fault" when processing many files (>400):
 - **Ultra-conservative fix implemented**: Optimized for datasets up to 500+ files
 - **Automatic detection**: Pipeline detects very large datasets (>450) and uses ultra-conservative parameters
 - **Resource optimization**: 8 threads, 60GB memory, 48-hour time limit
-- **See `POPPUNK_PERSISTENT_SEGFAULT_FIX.md`** for complete technical details
 
 **For persistent segmentation faults:**
 ```bash
@@ -157,10 +212,8 @@ If you encounter Docker mount errors like "Mounts denied", "path not shared", or
    docker ps
    ```
 
-4. **Alternative: Use sudo (not recommended for production):**
-   ```bash
-   sudo nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./results
-   ```
+### Google Cloud Issues
+For Google Cloud execution problems, see `GOOGLE_CLOUD_SETUP.md` for detailed troubleshooting.
 
 ### Help
 ```bash
@@ -169,7 +222,31 @@ nextflow run nextflow_tapir_poppunk_snp.nf --help
 
 ## Performance Notes
 
-- Optimized for ~400 FASTA files on 22-core system with 64GB RAM
+### Local Execution
+- Optimized for large datasets (400+ FASTA files) with ultra-conservative PopPUNK settings
 - PopPUNK clustering is the most memory-intensive step
 - Per-cluster analyses run in parallel after clustering
 - Total runtime depends on number of clusters and cluster sizes
+
+### Google Cloud Execution
+- Automatic scaling based on workload
+- Parallel processing of multiple clusters
+- Cost-optimized with spot instances
+- Estimated cost: $20-50 for 100 genomes, $80-150 for 400+ genomes
+
+## Files Included
+
+### Core Pipeline Files
+- `nextflow_tapir_poppunk_snp.nf` - Main Nextflow pipeline
+- `nextflow.config` - Configuration with multiple execution profiles
+- `run_pipeline.sh` - Local execution script
+- `run_google_batch.sh` - Google Cloud execution script
+- `setup_ubuntu_docker.sh` - Docker environment setup
+- `monitor_poppunk.sh` - PopPUNK progress monitoring
+
+### Documentation
+- `README.md` - This comprehensive guide
+- `GOOGLE_CLOUD_SETUP.md` - Google Cloud setup instructions
+- Additional troubleshooting guides for specific issues
+
+The pipeline is ready for production use on both local systems and Google Cloud Platform!

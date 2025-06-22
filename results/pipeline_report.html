@@ -18,11 +18,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Nextflow workflow report for run id [awesome_faggin]">
+  <meta name="description" content="Nextflow workflow report for run id [elated_nobel]">
   <meta name="author" content="Paolo Di Tommaso, Phil Ewels">
   <link rel="icon" type="image/png" href="https://www.nextflow.io/img/favicon.png" />
 
-  <title>[awesome_faggin] Nextflow Workflow Report</title>
+  <title>[elated_nobel] Nextflow Workflow Report</title>
 
   <style type="text/css">
   /*!
@@ -137,7 +137,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
       </ul>
       <span class="navbar-text">
-        [awesome_faggin]
+        [elated_nobel]
       </span>
     </div>
   </nav>
@@ -146,87 +146,35 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
     <div class="container">
 
       <h1 class="display-3">Nextflow workflow report</h1>
-      <h2 class="text-muted mb-4"><samp>[awesome_faggin]</samp> </h2>
+      <h2 class="text-muted mb-4"><samp>[elated_nobel]</samp> </h2>
 
       
           <div class="alert alert-danger mb-4">
               <h4>Workflow execution completed unsuccessfully!</h4>
-              <p>The exit status of the task that caused the workflow execution to fail was: <code>125</code>.</p>
+              <p>The exit status of the task that caused the workflow execution to fail was: <code>null</code>.</p>
               <p>The full error message was:</p>
-              <pre>Error executing process > 'POPPUNK_CHUNK (PopPUNK_chunk_ab)'
-
-Caused by:
-  Process `POPPUNK_CHUNK (PopPUNK_chunk_ab)` terminated with an error exit status (125)
-
-
-Command executed:
-
-  echo "Processing chunk ab with $(wc -l < chunk_ab.txt) samples"
-  
-  # Create database for this chunk
-  poppunk --create-db --r-files chunk_ab.txt \
-          --output poppunk_db_ab \
-          --threads 8 \
-          --overwrite
-  
-  # Fit model
-  poppunk --fit-model --ref-db poppunk_db_ab \
-          --output poppunk_fit_ab \
-          --threads 8 \
-          --overwrite
-  
-  # Assign clusters
-  poppunk --assign-query --ref-db poppunk_db_ab \
-          --q-files chunk_ab.txt \
-          --output poppunk_assigned_ab \
-          --threads 8 \
-          --overwrite
-  
-  # Find cluster file
-  find poppunk_assigned_ab -name "*clusters.csv" -exec cp {} chunk_ab_clusters.csv \;
-
-Command exit status:
-  125
-
-Command output:
-  (empty)
-
-Command error:
-  docker: Error response from daemon: Mounts denied: 
-  The path /tmp/nxf.3FAgRrTlQW is not shared from the host and is not known to Docker.
-  You can configure shared paths from Docker -> Preferences... -> Resources -> File Sharing.
-  See https://docs.docker.com/ for more info.
-  
-  Run 'docker run --help' for more information
-
-Work dir:
-  /home/phemarajata/nextflow_tapir_poppunk_snp/work/d7/240569b47a75b8d2fb3b78e673e743
-
-Container:
-  staphb/poppunk:2.7.5
-
-Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line</pre>
+              <pre>No FASTA files found in ./assemblies</pre>
           </div>
       
 
       <dl>
         <dt>Run times</dt>
         <dd>
-          <span id="workflow_start">22-Jun-2025 18:07:33</span> - <span id="workflow_complete">22-Jun-2025 18:07:37</span>
-          (<span id="completed_fromnow"></span>duration: <strong>4.1s</strong>)
+          <span id="workflow_start">22-Jun-2025 10:56:42</span> - <span id="workflow_complete">22-Jun-2025 10:56:43</span>
+          (<span id="completed_fromnow"></span>duration: <strong>1.2s</strong>)
         </dd>
 
         <dl>
           <div class="progress" style="height: 1.6rem; margin: 1.2rem auto; border-radius: 0.20rem;">
-            <div style="width: 50.0%" class="progress-bar bg-success" data-toggle="tooltip" data-placement="top" title="1 tasks succeeded"><span class="text-truncate">&nbsp; 1 succeeded &nbsp;</span></div>
+            <div style="width: 0.0%" class="progress-bar bg-success" data-toggle="tooltip" data-placement="top" title="0 tasks succeeded"><span class="text-truncate">&nbsp; 0 succeeded &nbsp;</span></div>
             <div style="width: 0.0%" class="progress-bar bg-secondary" data-toggle="tooltip" data-placement="top" title="0 tasks were cached"><span class="text-truncate">&nbsp; 0 cached &nbsp;</span></div>
             <div style="width: 0.0%" class="progress-bar bg-warning" data-toggle="tooltip" data-placement="top" title="0 tasks reported and error and were ignored"><span class="text-truncate">&nbsp; 0 ignored &nbsp;</span></div>
-            <div style="width: 50.0%" class="progress-bar bg-danger" data-toggle="tooltip" data-placement="top" title="1 tasks failed"><span class="text-truncate">&nbsp; 1 failed &nbsp;</span></div>
+            <div style="width: 0.0%" class="progress-bar bg-danger" data-toggle="tooltip" data-placement="top" title="0 tasks failed"><span class="text-truncate">&nbsp; 0 failed &nbsp;</span></div>
           </div>
         </dl>
 
         <dt>Nextflow command</dt>
-        <dd><pre class="nfcommand"><code>nextflow run poppunk_chunked_alternative.nf --input --input /home/phemarajata/Downloads/bucket/contextual_samples/subset_100/ --resultsDir ./results --chunk_size 200</code></pre></dd>
+        <dd><pre class="nfcommand"><code>nextflow run poppunk_chunked_alternative.nf --help</code></pre></dd>
       </dl>
 
       <dl class="row small">
@@ -234,13 +182,13 @@ Tip: when you have fixed the problem you can continue the execution adding the o
         <dd class="col-sm-9"><samp>(a few seconds)</samp></dd>
 
         <dt class="col-sm-3">Launch directory</dt>
-        <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp</samp></dd>
+        <dd class="col-sm-9"><samp>/home/user</samp></dd>
 
         <dt class="col-sm-3">Work directory</dt>
-        <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp/work</samp></dd>
+        <dd class="col-sm-9"><samp>/home/user/work</samp></dd>
 
         <dt class="col-sm-3">Project directory</dt>
-        <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp</samp></dd>
+        <dd class="col-sm-9"><samp>/home/user</samp></dd>
 
         
           <dt class="col-sm-3">Script name</dt>
@@ -253,7 +201,7 @@ Tip: when you have fixed the problem you can continue the execution adding the o
         
 
         <dt class="col-sm-3">Workflow session</dt>
-        <dd class="col-sm-9"><code>a3fbd2f6-8215-4a43-942a-fe35ebbb9151</code></dd>
+        <dd class="col-sm-9"><code>39f748fd-9e5b-4052-97d0-41988023210b</code></dd>
 
         
 
@@ -271,7 +219,7 @@ Tip: when you have fixed the problem you can continue the execution adding the o
         
 
         <dt class="col-sm-3">Nextflow version</dt>
-        <dd class="col-sm-9">version 24.10.4, build 5934 (20-01-2025 16:47 UTC)</dd>
+        <dd class="col-sm-9">version 24.10.5, build 5935 (04-03-2025 17:55 UTC)</dd>
       </dl>
     </div>
   </div>
@@ -403,7 +351,7 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 
   <footer>
     <div class="container-fluid">
-      Generated by <a href="https://www.nextflow.io" target="_blank">Nextflow</a>, version 24.10.4
+      Generated by <a href="https://www.nextflow.io" target="_blank">Nextflow</a>, version 24.10.5
     </div>
   </footer>
 
@@ -1093,7 +1041,7 @@ $(function() {
 
   // Nextflow report data
   window.data = { "trace":[
-{"task_id":"1","hash":"17\/7e1c84","native_id":"151334","process":"CHUNK_ASSEMBLIES","module":"-","container":"-","tag":"Chunking_assemblies","name":"CHUNK_ASSEMBLIES (Chunking_assemblies)","status":"COMPLETED","exit":"0","submit":"1750590454152","start":"1750590454168","complete":"1750590456776","duration":"2624","realtime":"1875","%cpu":"137.8","%mem":"0.0","rss":"3633152","vmem":"12775424","peak_rss":"3633152","peak_vmem":"12775424","rchar":"4661137","wchar":"111072","syscr":"9547","syscw":"1363","read_bytes":"57344","write_bytes":"65536","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/17\/7e1c84e3b2eb33e3ee9c24b46bdd9a","script":"\n    # Create chunks of assemblies\n    ls *.{fasta,fa,fas} | split -l 200 - chunk_\n    \n    # Convert to proper format for each chunk\n    for chunk_file in chunk_*; do\n        chunk_name=$(basename $chunk_file)\n        while read file; do\n            if [ -f \"$file\" ]; then\n                sample_name=$(basename \"$file\" | sed \'s\/\\.[^.]*$\/\/\')\n                echo -e \"$sample_name\\t$(pwd)\/$file\" >> ${chunk_name}.txt\n            fi\n        done < $chunk_file\n        rm $chunk_file\n    done\n    ","scratch":"-","queue":"-","cpus":"1","memory":"-","disk":"-","time":"-","env":"TMPDIR=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\nNXF_TEMP=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\n","error_action":"-","vol_ctxt":"784","inv_ctxt":"36","hostname":"-","cpu_model":"Intel(R) Core(TM) Ultra 9 185H"},{"task_id":"2","hash":"b0\/0726cc","native_id":"153116","process":"POPPUNK_CHUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_chunk_aa","name":"POPPUNK_CHUNK (PopPUNK_chunk_aa)","status":"ABORTED","exit":"-","submit":"1750590456894","start":"1750590456976","complete":"-","duration":"-","realtime":"-","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/b0\/0726cc89180c05557628d8e8065544","script":"\n    echo \"Processing chunk aa with $(wc -l < chunk_aa.txt) samples\"\n    \n    # Create database for this chunk\n    poppunk --create-db --r-files chunk_aa.txt \\\n            --output poppunk_db_aa \\\n            --threads 8 \\\n            --overwrite\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db_aa \\\n            --output poppunk_fit_aa \\\n            --threads 8 \\\n            --overwrite\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db_aa \\\n            --q-files chunk_aa.txt \\\n            --output poppunk_assigned_aa \\\n            --threads 8 \\\n            --overwrite\n    \n    # Find cluster file\n    find poppunk_assigned_aa -name \"*clusters.csv\" -exec cp {} chunk_aa_clusters.csv \\;\n    ","scratch":"-","queue":"-","cpus":"8","memory":"34359738368","disk":"-","time":"43200000","env":"TMPDIR=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\nNXF_TEMP=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\n","error_action":"-","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"},{"task_id":"3","hash":"d7\/240569","native_id":"153124","process":"POPPUNK_CHUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_chunk_ab","name":"POPPUNK_CHUNK (PopPUNK_chunk_ab)","status":"FAILED","exit":"125","submit":"1750590456903","start":"1750590456978","complete":"1750590457193","duration":"290","realtime":"215","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/d7\/240569b47a75b8d2fb3b78e673e743","script":"\n    echo \"Processing chunk ab with $(wc -l < chunk_ab.txt) samples\"\n    \n    # Create database for this chunk\n    poppunk --create-db --r-files chunk_ab.txt \\\n            --output poppunk_db_ab \\\n            --threads 8 \\\n            --overwrite\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db_ab \\\n            --output poppunk_fit_ab \\\n            --threads 8 \\\n            --overwrite\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db_ab \\\n            --q-files chunk_ab.txt \\\n            --output poppunk_assigned_ab \\\n            --threads 8 \\\n            --overwrite\n    \n    # Find cluster file\n    find poppunk_assigned_ab -name \"*clusters.csv\" -exec cp {} chunk_ab_clusters.csv \\;\n    ","scratch":"-","queue":"-","cpus":"8","memory":"34359738368","disk":"-","time":"43200000","env":"TMPDIR=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\nNXF_TEMP=\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/tmp\n","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":{"mean":137.8,"min":137.8,"q1":137.8,"q2":137.8,"q3":137.8,"max":137.8,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"process":"CHUNK_ASSEMBLIES","mem":{"mean":3633152,"min":3633152,"q1":3633152,"q2":3633152,"q3":3633152,"max":3633152,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"memUsage":null,"timeUsage":null,"vmem":{"mean":12775424,"min":12775424,"q1":12775424,"q2":12775424,"q3":12775424,"max":12775424,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"reads":{"mean":4661137,"min":4661137,"q1":4661137,"q2":4661137,"q3":4661137,"max":4661137,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"cpu":{"mean":137.8,"min":137.8,"q1":137.8,"q2":137.8,"q3":137.8,"max":137.8,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"time":{"mean":1875,"min":1875,"q1":1875,"q2":1875,"q3":1875,"max":1875,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"},"writes":{"mean":111072,"min":111072,"q1":111072,"q2":111072,"q3":111072,"max":111072,"minLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","maxLabel":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q1Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q2Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)","q3Label":"CHUNK_ASSEMBLIES (Chunking_assemblies)"}},{"cpuUsage":null,"process":"POPPUNK_CHUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":215,"min":215,"q1":215,"q2":215,"q3":215,"max":215,"minLabel":"POPPUNK_CHUNK (PopPUNK_chunk_ab)","maxLabel":"POPPUNK_CHUNK (PopPUNK_chunk_ab)","q1Label":"POPPUNK_CHUNK (PopPUNK_chunk_ab)","q2Label":"POPPUNK_CHUNK (PopPUNK_chunk_ab)","q3Label":"POPPUNK_CHUNK (PopPUNK_chunk_ab)"},"writes":null}] };
+], "summary":[] };
 
   </script>
 

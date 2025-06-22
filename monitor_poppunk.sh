@@ -22,7 +22,7 @@ monitor_progress() {
     while true; do
         if [ -f "$WORK_DIR/.command.log" ]; then
             echo "=== Latest Progress ==="
-            tail -10 "$WORK_DIR/.command.log" | grep -E "(Progress|Creating|Fitting|Assigning|Found|Total)"
+            tail -10 "$WORK_DIR/.command.log" | grep -E "(Progress|Creating|Fitting|Assigning|Found|Total|Memory)"
             echo ""
         fi
         

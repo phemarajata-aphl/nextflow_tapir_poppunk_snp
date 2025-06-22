@@ -14,6 +14,28 @@ params.resultsDir = './results'
 params.chunk_size = 200  // Process 200 genomes at a time
 params.overlap = 50      // Overlap between chunks for consistency
 
+// Help message
+if (params.help) {
+    log.info """
+    PopPUNK Chunked Alternative Pipeline
+    
+    Usage:
+        nextflow run poppunk_chunked_alternative.nf --input <path_to_assemblies> --resultsDir <output_directory>
+    
+    Required arguments:
+        --input         Path to directory containing FASTA assemblies
+        --resultsDir    Path to output directory
+    
+    Optional arguments:
+        --chunk_size    Number of genomes per chunk (default: 200)
+        --overlap       Overlap between chunks (default: 50)
+    
+    Example:
+        nextflow run poppunk_chunked_alternative.nf --input ./assemblies --resultsDir ./results --chunk_size 150
+    """
+    exit 0
+}
+
 process CHUNK_ASSEMBLIES {
     tag "Chunking_assemblies"
     
@@ -39,6 +61,8 @@ process CHUNK_ASSEMBLIES {
         done < \$chunk_file
         rm \$chunk_file
     done
+    
+    echo "Created \$(ls chunk_*.txt | wc -l) chunks"
     """
 }
 
@@ -80,6 +104,8 @@ process POPPUNK_CHUNK {
     
     # Find cluster file
     find poppunk_assigned_${chunk_id} -name "*clusters.csv" -exec cp {} chunk_${chunk_id}_clusters.csv \\;
+    
+    echo "Chunk ${chunk_id} completed successfully"
     """
 }
 
@@ -101,6 +127,8 @@ process MERGE_CLUSTERS {
     chunk_offset=0
     for file in ${cluster_files}; do
         if [ -f "\$file" ]; then
+            echo "Processing \$file..."
+            
             # Skip header and adjust cluster IDs to avoid conflicts
             tail -n +2 "\$file" | awk -v offset=\$chunk_offset 'BEGIN{FS=OFS="\\t"} {print \$1, \$2+offset}' >> merged_clusters.csv
             
@@ -110,7 +138,8 @@ process MERGE_CLUSTERS {
         fi
     done
     
-    echo "Merged \$(wc -l < merged_clusters.csv) total assignments"
+    echo "Merged \$(tail -n +2 merged_clusters.csv | wc -l) total assignments"
+    echo "Total unique clusters: \$(tail -n +2 merged_clusters.csv | cut -f2 | sort -u | wc -l)"
     """
 }
 

@@ -1,9 +1,8 @@
 #!/usr/bin/env nextflow
 
 /*
- * TAPIR + PopPUNK + Per-Clade SNP Analysis (Local Docker Setup)
- * DSL2 pipeline optimized for 22 threads and 64 GB RAM on local machine with Docker
- * Optimized for processing ~400 FASTA files on Intel Core Ultra 9 185H
+ * TAPIR + PopPUNK + Per-Clade SNP Analysis Pipeline
+ * DSL2 pipeline optimized for large datasets with Google Cloud Batch support
  * 
  * Steps:
  *   1. PopPUNK clustering of assembled genomes
@@ -12,8 +11,8 @@
  *
  * Requirements:
  *   - Nextflow (v23+)
- *   - Docker installed and running locally
- *   - StaPH-B Docker images will be pulled automatically:
+ *   - Docker/Singularity containers
+ *   - StaPH-B Docker images:
  *       staphb/poppunk:2.7.5 (PopPUNK clustering - latest)
  *       staphb/panaroo:1.5.2 (Pan-genome analysis - latest)
  *       staphb/gubbins:3.3.5 (Recombination removal - latest)
@@ -32,18 +31,32 @@ if (params.help) {
     
     Required arguments:
         --input         Path to directory containing FASTA assemblies
+                        Local: ./assemblies
+                        Cloud: gs://bucket-name/path/to/assemblies
         --resultsDir    Path to output directory
+                        Local: ./results
+                        Cloud: gs://bucket-name/path/to/results
     
     Optional arguments:
-        --poppunk_threads   Number of threads for PopPUNK (default: 8, ultra-optimized for very large datasets)
-        --panaroo_threads   Number of threads for Panaroo (default: 16)
-        --gubbins_threads   Number of threads for Gubbins (default: 8)
+        --poppunk_threads   Number of threads for PopPUNK (default: 8 local, 16 cloud)
+        --panaroo_threads   Number of threads for Panaroo (default: 16 local, 8 cloud)
+        --gubbins_threads   Number of threads for Gubbins (default: 8 local, 4 cloud)
         --iqtree_threads    Number of threads for IQ-TREE (default: 4)
         --large_dataset_threshold      Threshold for conservative PopPUNK parameters (default: 400)
         --very_large_dataset_threshold Threshold for ultra-conservative PopPUNK parameters (default: 450)
     
-    Example:
-        nextflow run nextflow_tapir_poppunk_snp.nf --input ./my_assemblies --resultsDir ./my_results
+    Execution profiles:
+        -profile ubuntu_docker    Local execution with Docker (Ubuntu optimized)
+        -profile google_batch     Google Cloud Batch execution
+        -profile standard         Default local execution
+    
+    Examples:
+        # Local execution
+        nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+        
+        # Google Cloud execution
+        nextflow run nextflow_tapir_poppunk_snp.nf -profile google_batch \\
+            --input gs://bucket/assemblies --resultsDir gs://bucket/results
     """
     exit 0
 }
@@ -53,11 +66,6 @@ process POPPUNK {
     tag "PopPUNK_clustering"
     container 'staphb/poppunk:2.7.5'
     publishDir "${params.resultsDir}/poppunk", mode: 'copy'
-    
-    // Aggressive memory optimization for very large datasets
-    memory '60 GB'
-    cpus 8   // Further reduce threads to minimize memory contention
-    time '48h'  // Allow much more time for large datasets
 
     input:
     path assemblies
@@ -67,7 +75,7 @@ process POPPUNK {
 
     script:
     """
-    # Aggressive memory management
+    # Aggressive memory management for large datasets
     ulimit -v 62914560  # ~60GB virtual memory limit
     ulimit -m 62914560  # ~60GB resident memory limit
     export OMP_NUM_THREADS=${task.cpus}
@@ -76,7 +84,7 @@ process POPPUNK {
     
     # Monitor memory usage
     echo "Initial memory status:"
-    free -h
+    free -h || echo "Memory info not available"
     
     # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)
     for file in *.{fasta,fa,fas}; do
@@ -123,7 +131,7 @@ process POPPUNK {
     
     # Memory checkpoint
     echo "Memory before database creation:"
-    free -h
+    free -h || echo "Memory info not available"
     
     # Create database with ultra-conservative parameters for very large datasets
     echo "Creating PopPUNK database..."
@@ -135,7 +143,7 @@ process POPPUNK {
     
     # Memory checkpoint
     echo "Memory after database creation:"
-    free -h
+    free -h || echo "Memory info not available"
     
     # Fit model with memory-conscious settings
     echo "Fitting PopPUNK model..."
@@ -146,7 +154,7 @@ process POPPUNK {
     
     # Memory checkpoint
     echo "Memory after model fitting:"
-    free -h
+    free -h || echo "Memory info not available"
     
     # Assign clusters
     echo "Assigning clusters..."
@@ -174,15 +182,13 @@ process POPPUNK {
     echo "Cluster assignments created successfully"
     echo "Total clusters found: \$(tail -n +2 clusters.csv | cut -f2 | sort -u | wc -l)"
     echo "Final memory status:"
-    free -h
+    free -h || echo "Memory info not available"
     head -5 clusters.csv
     """
 }
 
 process PANAROO {
     tag "Panaroo_cluster_${cluster_id}"
-    cpus params.panaroo_threads
-    memory '32 GB'
     container 'staphb/panaroo:1.5.2'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/panaroo", mode: 'copy'
 
@@ -197,16 +203,28 @@ process PANAROO {
 
     script:
     """
-    panaroo -i *.fasta -o panaroo_output \\
-            -t ${task.cpus} --clean-mode strict --aligner mafft
-    cp panaroo_output/core_gene_alignment.aln .
+    echo "Processing cluster ${cluster_id} with \${#assemblies[@]} genomes"
+    
+    # Run Panaroo pan-genome analysis
+    panaroo -i *.{fasta,fa,fas} -o panaroo_output \\
+            -t ${task.cpus} --clean-mode strict --aligner mafft \\
+            --remove-invalid-genes
+    
+    # Copy core gene alignment
+    if [ -f panaroo_output/core_gene_alignment.aln ]; then
+        cp panaroo_output/core_gene_alignment.aln .
+    else
+        echo "Error: Core gene alignment not found"
+        ls -la panaroo_output/
+        exit 1
+    fi
+    
+    echo "Panaroo analysis completed for cluster ${cluster_id}"
     """
 }
 
 process GUBBINS {
     tag "Gubbins_cluster_${cluster_id}"
-    cpus params.gubbins_threads
-    memory '16 GB'
     container 'staphb/gubbins:3.3.5'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/gubbins", mode: 'copy'
 
@@ -218,15 +236,32 @@ process GUBBINS {
 
     script:
     """
+    echo "Running Gubbins on cluster ${cluster_id}"
+    
+    # Check alignment file
+    if [ ! -f ${alignment} ]; then
+        echo "Error: Alignment file not found"
+        exit 1
+    fi
+    
+    # Run Gubbins for recombination removal
     run_gubbins.py --prefix gubbins_output \\
-                   --threads ${task.cpus} ${alignment}
+                   --threads ${task.cpus} \\
+                   --verbose ${alignment}
+    
+    # Check if output was created
+    if [ ! -f gubbins_output.filtered_polymorphic_sites.fasta ]; then
+        echo "Error: Gubbins output not found"
+        ls -la gubbins_output*
+        exit 1
+    fi
+    
+    echo "Gubbins analysis completed for cluster ${cluster_id}"
     """
 }
 
 process IQTREE {
     tag "IQTree_cluster_${cluster_id}"
-    cpus params.iqtree_threads
-    memory '8 GB'
     container 'staphb/iqtree2:2.4.0'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/iqtree", mode: 'copy'
 
@@ -238,8 +273,28 @@ process IQTREE {
 
     script:
     """
+    echo "Building phylogenetic tree for cluster ${cluster_id}"
+    
+    # Check SNP alignment file
+    if [ ! -f ${snp_alignment} ]; then
+        echo "Error: SNP alignment file not found"
+        exit 1
+    fi
+    
+    # Check if alignment has sufficient data
+    SEQ_COUNT=\$(grep -c ">" ${snp_alignment})
+    if [ \$SEQ_COUNT -lt 3 ]; then
+        echo "Warning: Insufficient sequences (\$SEQ_COUNT) for tree building"
+        touch tree.warning
+        exit 0
+    fi
+    
+    # Build phylogenetic tree with IQ-TREE
     iqtree2 -s ${snp_alignment} -m GTR+G \\
-            -nt ${task.cpus} -bb 1000 -pre tree
+            -nt ${task.cpus} -bb 1000 -pre tree \\
+            --quiet
+    
+    echo "Phylogenetic tree completed for cluster ${cluster_id}"
     """
 }
 
