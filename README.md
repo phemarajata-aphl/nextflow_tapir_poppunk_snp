@@ -11,17 +11,19 @@ This pipeline performs:
    - **Gubbins** - Removes recombination and identifies SNPs
    - **IQ-TREE** - Builds phylogenetic trees from filtered SNPs
 
+**Note**: This pipeline uses StaPH-B (State Public Health Bioinformatics) Docker containers, which are standardized, well-maintained containers specifically designed for public health bioinformatics workflows.
+
 ## System Requirements
 
 - **Hardware**: Intel Core Ultra 9 185H (22 threads) with 64GB RAM (optimized for ~400 FASTA files)
 - **Software**: 
   - Nextflow (v23+)
   - Docker (running locally)
-  - Docker images (pulled automatically):
-    - `mwanji/poppunk:2.6.2`
-    - `quay.io/biocontainers/panaroo:1.7.0--pyhdfd78af_0`
-    - `quay.io/biocontainers/gubbins:2.4.1--py36hb206151_3`
-    - `quay.io/biocontainers/iqtree:2.1.2--hdc80bf6_0`
+  - StaPH-B Docker images (pulled automatically):
+    - `staphb/poppunk:2.7.5` - PopPUNK clustering
+    - `staphb/panaroo:1.5.2` - Pan-genome analysis
+    - `staphb/gubbins:3.3.5` - Recombination removal
+    - `staphb/iqtree2:2.4.0` - Phylogenetic tree building
 
 ## Usage
 

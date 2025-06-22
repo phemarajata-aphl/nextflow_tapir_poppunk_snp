@@ -2,6 +2,7 @@
 
 # TAPIR + PopPUNK + Per-Clade SNP Analysis Pipeline
 # Example run script for Intel Core Ultra 9 185H with 64GB RAM
+# Uses StaPH-B Docker containers for all bioinformatics tools
 
 # Set your input and output directories
 INPUT_DIR="./assemblies"
@@ -32,6 +33,7 @@ echo "Starting TAPIR + PopPUNK + SNP Analysis Pipeline..."
 echo "Input: $INPUT_DIR ($FASTA_COUNT files)"
 echo "Output: $OUTPUT_DIR"
 echo "System: Intel Core Ultra 9 185H (22 threads, 64GB RAM)"
+echo "Containers: StaPH-B Docker images from DockerHub"
 echo ""
 
 nextflow run nextflow_tapir_poppunk_snp.nf \

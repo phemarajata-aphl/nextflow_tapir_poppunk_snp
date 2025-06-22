@@ -1,0 +1,1 @@
+2025-06-22 12:51:44	9.2s	happy_ptolemy	ERR	8bc448917fa5fe89c197501baf3e690d	8ac57961-fd6c-4bb8-a877-e70db185fe84	nextflow run nextflow_tapir_poppunk_snp.nf --input /home/phemarajata/Downloads/bucket/contextual_samples/ --resultsDir ./my_results --poppunk_threads 20 --panaroo_threads 12

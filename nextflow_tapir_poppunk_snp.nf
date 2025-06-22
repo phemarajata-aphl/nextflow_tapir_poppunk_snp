@@ -13,11 +13,11 @@
  * Requirements:
  *   - Nextflow (v23+)
  *   - Docker installed and running locally
- *   - Images will be pulled automatically:
- *       quay.io/biocontainers/panaroo:1.7.0--pyhdfd78af_0
- *       quay.io/biocontainers/gubbins:2.4.1--py36hb206151_3
- *       quay.io/biocontainers/iqtree:2.1.2--hdc80bf6_0
- *       mwanji/poppunk:2.6.2
+ *   - StaPH-B Docker images will be pulled automatically:
+ *       staphb/poppunk:2.7.5 (PopPUNK clustering - latest)
+ *       staphb/panaroo:1.5.2 (Pan-genome analysis - latest)
+ *       staphb/gubbins:3.3.5 (Recombination removal - latest)
+ *       staphb/iqtree2:2.4.0 (Phylogenetic tree building - latest)
  */
 
 nextflow.enable.dsl=2
@@ -53,6 +53,7 @@ if (params.help) {
 // Process definitions
 process POPPUNK {
     tag "PopPUNK_clustering"
+    container 'staphb/poppunk:2.7.5'
     publishDir "${params.resultsDir}/poppunk", mode: 'copy'
 
     input:
@@ -115,7 +116,7 @@ process PANAROO {
     tag "Panaroo_cluster_${cluster_id}"
     cpus params.panaroo_threads
     memory '32 GB'
-    container 'quay.io/biocontainers/panaroo:1.7.0--pyhdfd78af_0'
+    container 'staphb/panaroo:1.5.2'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/panaroo", mode: 'copy'
 
     input:
@@ -139,7 +140,7 @@ process GUBBINS {
     tag "Gubbins_cluster_${cluster_id}"
     cpus params.gubbins_threads
     memory '16 GB'
-    container 'quay.io/biocontainers/gubbins:2.4.1--py36hb206151_3'
+    container 'staphb/gubbins:3.3.5'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/gubbins", mode: 'copy'
 
     input:
@@ -159,7 +160,7 @@ process IQTREE {
     tag "IQTree_cluster_${cluster_id}"
     cpus params.iqtree_threads
     memory '8 GB'
-    container 'quay.io/biocontainers/iqtree:2.1.2--hdc80bf6_0'
+    container 'staphb/iqtree2:2.4.0'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/iqtree", mode: 'copy'
 
     input:
