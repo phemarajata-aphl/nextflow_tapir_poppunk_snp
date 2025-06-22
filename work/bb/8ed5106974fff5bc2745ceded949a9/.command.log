@@ -1,0 +1,46 @@
+Unable to find image 'staphb/poppunk:2.7.5' locally
+2.7.5: Pulling from staphb/poppunk
+6286977004a9: Pulling fs layer
+279fdad343e1: Pulling fs layer
+0a933b0330d3: Pulling fs layer
+33595c5ef9a8: Pulling fs layer
+04c81ed5f56b: Pulling fs layer
+e3646aba93e9: Pulling fs layer
+ab873805930b: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+7d14de7bc551: Pulling fs layer
+ecc6f04eb2ee: Pulling fs layer
+dfd759f19f72: Pulling fs layer
+22ca4bf3fce5: Pulling fs layer
+4f4fb700ef54: Already exists
+6286977004a9: Download complete
+0a933b0330d3: Download complete
+279fdad343e1: Download complete
+33595c5ef9a8: Download complete
+e3646aba93e9: Download complete
+7d14de7bc551: Download complete
+04c81ed5f56b: Download complete
+dfd759f19f72: Download complete
+ecc6f04eb2ee: Download complete
+ab873805930b: Download complete
+0a933b0330d3: Pull complete
+279fdad343e1: Pull complete
+7d14de7bc551: Pull complete
+ab873805930b: Pull complete
+4f4fb700ef54: Pull complete
+33595c5ef9a8: Pull complete
+e3646aba93e9: Pull complete
+04c81ed5f56b: Pull complete
+ecc6f04eb2ee: Pull complete
+dfd759f19f72: Pull complete
+22ca4bf3fce5: Download complete
+6286977004a9: Pull complete
+22ca4bf3fce5: Pull complete
+Digest: sha256:ced130f55cf551c1d9a063d66b10c1a86a0a324455024d45eb73c88d53b3c296
+Status: Downloaded newer image for staphb/poppunk:2.7.5
+docker: Error response from daemon: Mounts denied: 
+The path /tmp/nxf.KD8FIgSMKH is not shared from the host and is not known to Docker.
+You can configure shared paths from Docker -> Preferences... -> Resources -> File Sharing.
+See https://docs.docker.com/ for more info.
+
+Run 'docker run --help' for more information

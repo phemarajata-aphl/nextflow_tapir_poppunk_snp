@@ -18,11 +18,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Nextflow workflow report for run id [happy_ptolemy]">
+  <meta name="description" content="Nextflow workflow report for run id [adoring_leibniz]">
   <meta name="author" content="Paolo Di Tommaso, Phil Ewels">
   <link rel="icon" type="image/png" href="https://www.nextflow.io/img/favicon.png" />
 
-  <title>[happy_ptolemy] Nextflow Workflow Report</title>
+  <title>[adoring_leibniz] Nextflow Workflow Report</title>
 
   <style type="text/css">
   /*!
@@ -137,7 +137,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
       </ul>
       <span class="navbar-text">
-        [happy_ptolemy]
+        [adoring_leibniz]
       </span>
     </div>
   </nav>
@@ -146,7 +146,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
     <div class="container">
 
       <h1 class="display-3">Nextflow workflow report</h1>
-      <h2 class="text-muted mb-4"><samp>[happy_ptolemy]</samp> </h2>
+      <h2 class="text-muted mb-4"><samp>[adoring_leibniz]</samp> </h2>
 
       
           <div class="alert alert-danger mb-4">
@@ -214,16 +214,58 @@ Command output:
   (empty)
 
 Command error:
-  Unable to find image 'mwanji/poppunk:2.6.2' locally
-  docker: Error response from daemon: pull access denied for mwanji/poppunk, repository does not exist or may require 'docker login'
+  Unable to find image 'staphb/poppunk:2.7.5' locally
+  2.7.5: Pulling from staphb/poppunk
+  6286977004a9: Pulling fs layer
+  279fdad343e1: Pulling fs layer
+  0a933b0330d3: Pulling fs layer
+  33595c5ef9a8: Pulling fs layer
+  04c81ed5f56b: Pulling fs layer
+  e3646aba93e9: Pulling fs layer
+  ab873805930b: Pulling fs layer
+  4f4fb700ef54: Pulling fs layer
+  7d14de7bc551: Pulling fs layer
+  ecc6f04eb2ee: Pulling fs layer
+  dfd759f19f72: Pulling fs layer
+  22ca4bf3fce5: Pulling fs layer
+  4f4fb700ef54: Already exists
+  6286977004a9: Download complete
+  0a933b0330d3: Download complete
+  279fdad343e1: Download complete
+  33595c5ef9a8: Download complete
+  e3646aba93e9: Download complete
+  7d14de7bc551: Download complete
+  04c81ed5f56b: Download complete
+  dfd759f19f72: Download complete
+  ecc6f04eb2ee: Download complete
+  ab873805930b: Download complete
+  0a933b0330d3: Pull complete
+  279fdad343e1: Pull complete
+  7d14de7bc551: Pull complete
+  ab873805930b: Pull complete
+  4f4fb700ef54: Pull complete
+  33595c5ef9a8: Pull complete
+  e3646aba93e9: Pull complete
+  04c81ed5f56b: Pull complete
+  ecc6f04eb2ee: Pull complete
+  dfd759f19f72: Pull complete
+  22ca4bf3fce5: Download complete
+  6286977004a9: Pull complete
+  22ca4bf3fce5: Pull complete
+  Digest: sha256:ced130f55cf551c1d9a063d66b10c1a86a0a324455024d45eb73c88d53b3c296
+  Status: Downloaded newer image for staphb/poppunk:2.7.5
+  docker: Error response from daemon: Mounts denied: 
+  The path /tmp/nxf.KD8FIgSMKH is not shared from the host and is not known to Docker.
+  You can configure shared paths from Docker -> Preferences... -> Resources -> File Sharing.
+  See https://docs.docker.com/ for more info.
   
   Run 'docker run --help' for more information
 
 Work dir:
-  /home/phemarajata/nextflow_tapir_poppunk_snp/work/a8/f183471e3aa229c3215c7f57df51ec
+  /home/phemarajata/nextflow_tapir_poppunk_snp/work/bb/8ed5106974fff5bc2745ceded949a9
 
 Container:
-  mwanji/poppunk:2.6.2
+  staphb/poppunk:2.7.5
 
 Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`</pre>
           </div>
@@ -232,8 +274,8 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
       <dl>
         <dt>Run times</dt>
         <dd>
-          <span id="workflow_start">22-Jun-2025 12:51:44</span> - <span id="workflow_complete">22-Jun-2025 12:51:52</span>
-          (<span id="completed_fromnow"></span>duration: <strong>8.2s</strong>)
+          <span id="workflow_start">22-Jun-2025 13:14:46</span> - <span id="workflow_complete">22-Jun-2025 13:15:42</span>
+          (<span id="completed_fromnow"></span>duration: <strong>56.5s</strong>)
         </dd>
 
         <dl>
@@ -251,7 +293,7 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
 
       <dl class="row small">
         <dt class="col-sm-3">CPU-Hours</dt>
-        <dd class="col-sm-9"><samp>(a few seconds)</samp></dd>
+        <dd class="col-sm-9"><samp>0.3 (100% failed)</samp></dd>
 
         <dt class="col-sm-3">Launch directory</dt>
         <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp</samp></dd>
@@ -269,11 +311,11 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
 
         
           <dt class="col-sm-3">Script ID</dt>
-          <dd class="col-sm-9"><code>8bc448917fa5fe89c197501baf3e690d</code></dd>
+          <dd class="col-sm-9"><code>c1e704245ec6c53b3f0b7edc87f0f15f</code></dd>
         
 
         <dt class="col-sm-3">Workflow session</dt>
-        <dd class="col-sm-9"><code>8ac57961-fd6c-4bb8-a877-e70db185fe84</code></dd>
+        <dd class="col-sm-9"><code>8d1e1059-95f3-4282-a3a0-cf386a1c9130</code></dd>
 
         
 
@@ -282,7 +324,7 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
 
         
         <dt class="col-sm-3">Workflow container</dt>
-        <dd class="col-sm-9"><samp>[POPPUNK:mwanji/poppunk:2.6.2, PANAROO:quay.io/biocontainers/panaroo:1.7.0--pyhdfd78af_0, GUBBINS:quay.io/biocontainers/gubbins:2.4.1--py36hb206151_3, IQTREE:quay.io/biocontainers/iqtree:2.1.2--hdc80bf6_0]</samp></dd>
+        <dd class="col-sm-9"><samp>[POPPUNK:staphb/poppunk:2.7.5, PANAROO:staphb/panaroo:1.5.2, GUBBINS:staphb/gubbins:3.3.5, IQTREE:staphb/iqtree2:2.4.0]</samp></dd>
 
         <dt class="col-sm-3">Container engine</dt>
         <dd class="col-sm-9"><samp>docker</samp></dd>
@@ -1113,7 +1155,7 @@ $(function() {
 
   // Nextflow report data
   window.data = { "trace":[
-{"task_id":"1","hash":"a8\/f18347","native_id":"134036","process":"POPPUNK","module":"-","container":"mwanji\/poppunk:2.6.2","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"125","submit":"1750571505765","start":"1750571505867","complete":"1750571512551","duration":"6786","realtime":"6684","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/a8\/f183471e3aa229c3215c7f57df51ec","script":"\n    # Create a list file for PopPUNK with full paths\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            echo \"$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 20 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 20 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 20 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"20","memory":"51539607552","disk":"-","time":"-","env":"-","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":6684,"min":6684,"q1":6684,"q2":6684,"q3":6684,"max":6684,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
+{"task_id":"1","hash":"bb\/8ed510","native_id":"137531","process":"POPPUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"125","submit":"1750572888071","start":"1750572888131","complete":"1750572942844","duration":"54773","realtime":"54713","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/bb\/8ed5106974fff5bc2745ceded949a9","script":"\n    # Create a list file for PopPUNK with full paths\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            echo \"$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 20 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 20 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 20 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"20","memory":"51539607552","disk":"-","time":"-","env":"-","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":54713,"min":54713,"q1":54713,"q2":54713,"q3":54713,"max":54713,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
 
   </script>
 

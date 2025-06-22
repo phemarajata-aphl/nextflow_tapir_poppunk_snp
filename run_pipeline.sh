@@ -3,6 +3,7 @@
 # TAPIR + PopPUNK + Per-Clade SNP Analysis Pipeline
 # Example run script for Intel Core Ultra 9 185H with 64GB RAM
 # Uses StaPH-B Docker containers for all bioinformatics tools
+# Optimized for Ubuntu Docker environment
 
 # Set your input and output directories
 INPUT_DIR="./assemblies"
@@ -28,6 +29,10 @@ fi
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
+# Setup Ubuntu Docker environment
+echo "Setting up Ubuntu Docker environment..."
+./setup_ubuntu_docker.sh
+
 # Run the pipeline
 echo "Starting TAPIR + PopPUNK + SNP Analysis Pipeline..."
 echo "Input: $INPUT_DIR ($FASTA_COUNT files)"
@@ -37,6 +42,7 @@ echo "Containers: StaPH-B Docker images from DockerHub"
 echo ""
 
 nextflow run nextflow_tapir_poppunk_snp.nf \
+    -profile ubuntu_docker \
     --input "$INPUT_DIR" \
     --resultsDir "$OUTPUT_DIR" \
     --poppunk_threads 22 \

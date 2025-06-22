@@ -28,6 +28,17 @@ This pipeline performs:
 ## Usage
 
 ### Basic Usage
+
+**For Ubuntu users (recommended):**
+```bash
+# First, run the setup script to configure Docker properly
+./setup_ubuntu_docker.sh
+
+# Then run the pipeline with Ubuntu Docker profile
+nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+```
+
+**Standard usage:**
 ```bash
 nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./results
 ```
@@ -87,6 +98,34 @@ The pipeline is optimized for your system:
 2. **Docker permission errors**: Ensure Docker is running and user has permissions
 3. **Memory issues**: Reduce thread counts or process fewer files at once
 4. **Small clusters skipped**: Clusters with <3 genomes are automatically filtered out
+
+### Ubuntu Docker Issues
+If you encounter "Mounts denied" or "path not shared" errors:
+
+1. **Run the setup script first:**
+   ```bash
+   ./setup_ubuntu_docker.sh
+   ```
+
+2. **Use the Ubuntu Docker profile:**
+   ```bash
+   nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+   ```
+
+3. **Check Docker permissions:**
+   ```bash
+   # Add user to docker group (requires logout/login)
+   sudo usermod -aG docker $USER
+   newgrp docker
+   
+   # Test Docker access
+   docker ps
+   ```
+
+4. **Alternative: Use sudo (not recommended for production):**
+   ```bash
+   sudo nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./results
+   ```
 
 ### Help
 ```bash

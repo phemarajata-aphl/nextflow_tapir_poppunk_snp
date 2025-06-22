@@ -1,2 +1,2 @@
 task_id	hash	native_id	name	status	exit	submit	duration	realtime	%cpu	peak_rss	peak_vmem	rchar	wchar
-1	a8/f18347	134036	POPPUNK (PopPUNK_clustering)	FAILED	125	2025-06-22 12:51:45.765	6.8s	6.7s	-	-	-	-	-
+1	bb/8ed510	137531	POPPUNK (PopPUNK_clustering)	FAILED	125	2025-06-22 13:14:48.071	54.8s	54.7s	-	-	-	-	-
