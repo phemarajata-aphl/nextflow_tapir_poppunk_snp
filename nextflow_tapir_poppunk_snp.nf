@@ -60,10 +60,12 @@ process POPPUNK {
 
     script:
     """
-    # Create a list file for PopPUNK with full paths
+    # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)
     for file in *.{fasta,fa,fas}; do
         if [ -f "\$file" ]; then
-            echo "\$(pwd)/\$file" >> assembly_list.txt
+            # Extract sample name (remove extension)
+            sample_name=\$(basename "\$file" | sed 's/\\.[^.]*\$//')
+            echo -e "\$sample_name\\t\$(pwd)/\$file" >> assembly_list.txt
         fi
     done
     
@@ -74,6 +76,8 @@ process POPPUNK {
     fi
     
     echo "Found \$(wc -l < assembly_list.txt) assembly files"
+    echo "First few entries in assembly list:"
+    head -3 assembly_list.txt
     
     # Create database
     poppunk --create-db --r-files assembly_list.txt \\

@@ -99,6 +99,13 @@ The pipeline is optimized for your system:
 3. **Memory issues**: Reduce thread counts or process fewer files at once
 4. **Small clusters skipped**: Clusters with <3 genomes are automatically filtered out
 
+### PopPUNK Issues
+If you encounter "Input reference list is misformatted" error:
+- This has been fixed in the latest version
+- PopPUNK requires tab-separated input (sample_name<TAB>file_path)
+- The pipeline now automatically creates properly formatted input files
+- See `POPPUNK_FIX.md` for technical details
+
 ### Ubuntu Docker Issues
 If you encounter Docker mount errors like "Mounts denied", "path not shared", or "Duplicate mount point":
 

@@ -18,11 +18,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Nextflow workflow report for run id [gigantic_shirley]">
+  <meta name="description" content="Nextflow workflow report for run id [zen_brazil]">
   <meta name="author" content="Paolo Di Tommaso, Phil Ewels">
   <link rel="icon" type="image/png" href="https://www.nextflow.io/img/favicon.png" />
 
-  <title>[gigantic_shirley] Nextflow Workflow Report</title>
+  <title>[zen_brazil] Nextflow Workflow Report</title>
 
   <style type="text/css">
   /*!
@@ -137,7 +137,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
       </ul>
       <span class="navbar-text">
-        [gigantic_shirley]
+        [zen_brazil]
       </span>
     </div>
   </nav>
@@ -146,7 +146,7 @@ table.DTCR_clonedTable.dataTable{position:absolute !important;background-color:r
     <div class="container">
 
       <h1 class="display-3">Nextflow workflow report</h1>
-      <h2 class="text-muted mb-4"><samp>[gigantic_shirley]</samp> </h2>
+      <h2 class="text-muted mb-4"><samp>[zen_brazil]</samp> </h2>
 
       
           <div class="alert alert-danger mb-4">
@@ -161,10 +161,12 @@ Caused by:
 
 Command executed:
 
-  # Create a list file for PopPUNK with full paths
+  # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)
   for file in *.{fasta,fa,fas}; do
       if [ -f "$file" ]; then
-          echo "$(pwd)/$file" >> assembly_list.txt
+          # Extract sample name (remove extension)
+          sample_name=$(basename "$file" | sed 's/\.[^.]*$//')
+          echo -e "$sample_name\t$(pwd)/$file" >> assembly_list.txt
       fi
   done
   
@@ -175,6 +177,8 @@ Command executed:
   fi
   
   echo "Found $(wc -l < assembly_list.txt) assembly files"
+  echo "First few entries in assembly list:"
+  head -3 assembly_list.txt
   
   # Create database
   poppunk --create-db --r-files assembly_list.txt \
@@ -211,34 +215,79 @@ Command exit status:
   1
 
 Command output:
-  Found 132 assembly files
+  Found 464 assembly files
+  First few entries in assembly list:
+  Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand	Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand.fasta
+  Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand	Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand.fasta
+  Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam	Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta
 
 Command error:
-  Found 132 assembly files
-  PopPUNK (POPulation Partitioning Using Nucleotide Kmers)
-  	(with backend: sketchlib v2.1.4
-  	 sketchlib: /opt/conda/envs/poppunk-env/lib/python3.12/site-packages/pp_sketchlib.cpython-312-x86_64-linux-gnu.so)
-  
-  Graph-tools OpenMP parallelisation enabled: with 22 threads
-  Mode: Building new database from input sequences
-  Input reference list is misformatted
-  Must contain sample name and file, tab separated
+  Progress (CPU): 1.2%
+  Progress (CPU): 1.3%
+  Progress (CPU): 1.4%
+  Progress (CPU): 1.5%
+  Progress (CPU): 1.6%
+  Progress (CPU): 1.7%
+  Progress (CPU): 1.8%
+  Progress (CPU): 1.9%
+  Progress (CPU): 2.0%
+  Progress (CPU): 2.1%
+  Progress (CPU): 2.2%
+  Progress (CPU): 2.3%
+  Progress (CPU): 2.4%
+  Progress (CPU): 2.5%
+  Progress (CPU): 2.6%
+  Progress (CPU): 2.7%
+  Progress (CPU): 2.8%
+  Progress (CPU): 2.9%
+  Progress (CPU): 3.0%
+  Progress (CPU): 3.1%
+  Progress (CPU): 3.2%
+  Progress (CPU): 3.3%
+  Progress (CPU): 3.4%
+  Progress (CPU): 3.5%
+  Progress (CPU): 3.6%
+  Progress (CPU): 3.7%
+  Progress (CPU): 3.8%
+  Progress (CPU): 3.9%
+  Progress (CPU): 4.0%
+  Progress (CPU): 4.1%
+  Progress (CPU): 4.2%
+  Progress (CPU): 4.3%
+  Progress (CPU): 4.4%
+  Progress (CPU): 4.5%
+  Progress (CPU): 4.6%
+  Progress (CPU): 4.7%
+  Progress (CPU): 4.8%
+  Progress (CPU): 4.9%
+  Progress (CPU): 5.0%
+  Progress (CPU): 5.1%
+  Progress (CPU): 5.2%
+  Progress (CPU): 5.3%
+  Progress (CPU): 5.4%
+  Progress (CPU): 5.5%
+  Progress (CPU): 5.6%
+  Progress (CPU): 5.7%
+  Progress (CPU): 5.8%
+  Progress (CPU): 5.9%
+  Progress (CPU): 6.0%
+  Progress (CPU): 6.1%.command.sh: line 23:  2065 Segmentation fault      poppunk --create-db --r-files assembly_list.txt --output poppunk_db --threads 22
 
 Work dir:
-  /home/phemarajata/nextflow_tapir_poppunk_snp/work/ba/e249c0e747b20d263b1a38c7ae124f
+  /home/phemarajata/nextflow_tapir_poppunk_snp/work/50/9cedb7718139e5629f54ddcc4f37e9
 
 Container:
   staphb/poppunk:2.7.5
 
-Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`</pre>
+Tip: you can replicate the issue by changing to the process work dir and entering the command `bash .command.run`</pre>
           </div>
       
 
       <dl>
         <dt>Run times</dt>
         <dd>
-          <span id="workflow_start">22-Jun-2025 13:34:19</span> - <span id="workflow_complete">22-Jun-2025 13:35:11</span>
-          (<span id="completed_fromnow"></span>duration: <strong>52.1s</strong>)
+          <span id="workflow_start">22-Jun-2025 17:19:13</span> - <span id="workflow_complete">22-Jun-2025 17:19:41</span>
+          (<span id="completed_fromnow"></span>duration: <strong>28.5s</strong>)
         </dd>
 
         <dl>
@@ -256,7 +305,7 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
 
       <dl class="row small">
         <dt class="col-sm-3">CPU-Hours</dt>
-        <dd class="col-sm-9"><samp>0.3 (100% failed)</samp></dd>
+        <dd class="col-sm-9"><samp>0.2 (100% failed)</samp></dd>
 
         <dt class="col-sm-3">Launch directory</dt>
         <dd class="col-sm-9"><samp>/home/phemarajata/nextflow_tapir_poppunk_snp</samp></dd>
@@ -274,11 +323,11 @@ Tip: you can try to figure out what's wrong by changing to the process work dir 
 
         
           <dt class="col-sm-3">Script ID</dt>
-          <dd class="col-sm-9"><code>c1e704245ec6c53b3f0b7edc87f0f15f</code></dd>
+          <dd class="col-sm-9"><code>af7a9d1b2a6a81a55e83f89c0d845e0b</code></dd>
         
 
         <dt class="col-sm-3">Workflow session</dt>
-        <dd class="col-sm-9"><code>01ddd79c-47c7-4bd5-8626-5708e0e5c9f0</code></dd>
+        <dd class="col-sm-9"><code>a6fd7f75-f0f6-49c7-b9e3-c8ca121067e7</code></dd>
 
         
 
@@ -1118,7 +1167,7 @@ $(function() {
 
   // Nextflow report data
   window.data = { "trace":[
-{"task_id":"1","hash":"ba\/e249c0","native_id":"139727","process":"POPPUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"1","submit":"1750574060164","start":"1750574060197","complete":"1750574111299","duration":"51135","realtime":"51102","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/ba\/e249c0e747b20d263b1a38c7ae124f","script":"\n    # Create a list file for PopPUNK with full paths\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            echo \"$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 22 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 22 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 22 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"22","memory":"51539607552","disk":"-","time":"-","env":"TMPDIR=.\/tmp\nNXF_TEMP=.\/tmp\n","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":51102,"min":51102,"q1":51102,"q2":51102,"q3":51102,"max":51102,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
+{"task_id":"1","hash":"50\/9cedb7","native_id":"143967","process":"POPPUNK","module":"-","container":"staphb\/poppunk:2.7.5","tag":"PopPUNK_clustering","name":"POPPUNK (PopPUNK_clustering)","status":"FAILED","exit":"1","submit":"1750587554561","start":"1750587554601","complete":"1750587581700","duration":"27139","realtime":"27099","%cpu":"-","%mem":"-","rss":"-","vmem":"-","peak_rss":"-","peak_vmem":"-","rchar":"-","wchar":"-","syscr":"-","syscw":"-","read_bytes":"-","write_bytes":"-","attempt":"1","workdir":"\/home\/phemarajata\/nextflow_tapir_poppunk_snp\/work\/50\/9cedb7718139e5629f54ddcc4f37e9","script":"\n    # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)\n    for file in *.{fasta,fa,fas}; do\n        if [ -f \"$file\" ]; then\n            # Extract sample name (remove extension)\n            sample_name=$(basename \"$file\" | sed \'s\/\\.[^.]*$\/\/\')\n            echo -e \"$sample_name\\t$(pwd)\/$file\" >> assembly_list.txt\n        fi\n    done\n    \n    # Check if we have any files\n    if [ ! -s assembly_list.txt ]; then\n        echo \"No FASTA files found!\"\n        exit 1\n    fi\n    \n    echo \"Found $(wc -l < assembly_list.txt) assembly files\"\n    echo \"First few entries in assembly list:\"\n    head -3 assembly_list.txt\n    \n    # Create database\n    poppunk --create-db --r-files assembly_list.txt \\\n            --output poppunk_db --threads 22 || exit 1\n    \n    # Fit model\n    poppunk --fit-model --ref-db poppunk_db \\\n            --output poppunk_fit --threads 22 || exit 1\n    \n    # Assign clusters\n    poppunk --assign-query --ref-db poppunk_db \\\n            --q-files assembly_list.txt \\\n            --output poppunk_assigned --threads 22 || exit 1\n    \n    # Find and copy the cluster assignment file\n    find poppunk_assigned -name \"*clusters.csv\" -exec cp {} clusters.csv \\;\n    \n    # If that doesn\'t work, try alternative names\n    if [ ! -f clusters.csv ]; then\n        find poppunk_assigned -name \"*cluster*.csv\" -exec cp {} clusters.csv \\;\n    fi\n    \n    # Final check\n    if [ ! -f clusters.csv ]; then\n        echo \"Could not find cluster assignment file. Available files:\"\n        find poppunk_assigned -name \"*.csv\" -ls\n        exit 1\n    fi\n    \n    echo \"Cluster assignments created successfully\"\n    head -5 clusters.csv\n    ","scratch":"-","queue":"-","cpus":"22","memory":"51539607552","disk":"-","time":"-","env":"TMPDIR=.\/tmp\nNXF_TEMP=.\/tmp\n","error_action":"TERMINATE","vol_ctxt":"-","inv_ctxt":"-","hostname":"-","cpu_model":"-"}], "summary":[{"cpuUsage":null,"process":"POPPUNK","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":27099,"min":27099,"q1":27099,"q2":27099,"q3":27099,"max":27099,"minLabel":"POPPUNK (PopPUNK_clustering)","maxLabel":"POPPUNK (PopPUNK_clustering)","q1Label":"POPPUNK (PopPUNK_clustering)","q2Label":"POPPUNK (PopPUNK_clustering)","q3Label":"POPPUNK (PopPUNK_clustering)"},"writes":null}] };
 
   </script>
 
