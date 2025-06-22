@@ -206,11 +206,13 @@ $(function() {
 
   // Nextflow report data
   window.data = {
-    "elapsed": "28.9s",
-    "beginningMillis": 1750587553385,
-    "endingMillis": 1750587582277,
+    "elapsed": "4.6s",
+    "beginningMillis": 1750590453221,
+    "endingMillis": 1750590457778,
     "processes": [
-        {"label": "POPPUNK (PopPUNK_clustering)", "cached": false, "index": 0, "times": [{"starting_time": 1750587554561, "ending_time": 1750587554601}, {"starting_time": 1750587554601, "ending_time": 1750587581700, "label": "27.1s \/ -"}]}
+        {"label": "CHUNK_ASSEMBLIES (Chunking_assemblies)", "cached": false, "index": 0, "times": [{"starting_time": 1750590454152, "ending_time": 1750590454168}, {"starting_time": 1750590454168, "ending_time": 1750590456043, "label": "2.6s \/ 3.5 MB"}, {"starting_time": 1750590456043, "ending_time": 1750590456776}]},
+        {"label": "POPPUNK_CHUNK (PopPUNK_chunk_aa)", "cached": false, "index": 1, "times": [{"starting_time": 1750590456894, "ending_time": 1750590456976}]},
+        {"label": "POPPUNK_CHUNK (PopPUNK_chunk_ab)", "cached": false, "index": 1, "times": [{"starting_time": 1750590456903, "ending_time": 1750590456978}, {"starting_time": 1750590456978, "ending_time": 1750590457193, "label": "290ms \/ -"}]}
     ]
 }
 ;

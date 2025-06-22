@@ -1,2 +1,4 @@
 task_id	hash	native_id	name	status	exit	submit	duration	realtime	%cpu	peak_rss	peak_vmem	rchar	wchar
-1	50/9cedb7	143967	POPPUNK (PopPUNK_clustering)	FAILED	1	2025-06-22 17:19:14.561	27.1s	27.1s	-	-	-	-	-
+1	17/7e1c84	151334	CHUNK_ASSEMBLIES (Chunking_assemblies)	COMPLETED	0	2025-06-22 18:07:34.152	2.6s	1.9s	137.8%	3.5 MB	12.2 MB	4.4 MB	108.5 KB
+3	d7/240569	153124	POPPUNK_CHUNK (PopPUNK_chunk_ab)	FAILED	125	2025-06-22 18:07:36.903	290ms	215ms	-	-	-	-	-
+2	b0/0726cc	153116	POPPUNK_CHUNK (PopPUNK_chunk_aa)	ABORTED	-	2025-06-22 18:07:36.894	-	-	-	-	-	-	-

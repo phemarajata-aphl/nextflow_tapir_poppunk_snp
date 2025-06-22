@@ -35,10 +35,12 @@ if (params.help) {
         --resultsDir    Path to output directory
     
     Optional arguments:
-        --poppunk_threads   Number of threads for PopPUNK (default: 22)
+        --poppunk_threads   Number of threads for PopPUNK (default: 8, ultra-optimized for very large datasets)
         --panaroo_threads   Number of threads for Panaroo (default: 16)
         --gubbins_threads   Number of threads for Gubbins (default: 8)
         --iqtree_threads    Number of threads for IQ-TREE (default: 4)
+        --large_dataset_threshold      Threshold for conservative PopPUNK parameters (default: 400)
+        --very_large_dataset_threshold Threshold for ultra-conservative PopPUNK parameters (default: 450)
     
     Example:
         nextflow run nextflow_tapir_poppunk_snp.nf --input ./my_assemblies --resultsDir ./my_results
@@ -51,6 +53,11 @@ process POPPUNK {
     tag "PopPUNK_clustering"
     container 'staphb/poppunk:2.7.5'
     publishDir "${params.resultsDir}/poppunk", mode: 'copy'
+    
+    // Aggressive memory optimization for very large datasets
+    memory '60 GB'
+    cpus 8   // Further reduce threads to minimize memory contention
+    time '48h'  // Allow much more time for large datasets
 
     input:
     path assemblies
@@ -60,6 +67,17 @@ process POPPUNK {
 
     script:
     """
+    # Aggressive memory management
+    ulimit -v 62914560  # ~60GB virtual memory limit
+    ulimit -m 62914560  # ~60GB resident memory limit
+    export OMP_NUM_THREADS=${task.cpus}
+    export MALLOC_TRIM_THRESHOLD_=100000
+    export MALLOC_MMAP_THRESHOLD_=100000
+    
+    # Monitor memory usage
+    echo "Initial memory status:"
+    free -h
+    
     # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)
     for file in *.{fasta,fa,fas}; do
         if [ -f "\$file" ]; then
@@ -79,18 +97,64 @@ process POPPUNK {
     echo "First few entries in assembly list:"
     head -3 assembly_list.txt
     
-    # Create database
-    poppunk --create-db --r-files assembly_list.txt \\
-            --output poppunk_db --threads ${task.cpus} || exit 1
+    # Check dataset size and adjust parameters aggressively
+    NUM_SAMPLES=\$(wc -l < assembly_list.txt)
+    echo "Processing \$NUM_SAMPLES samples"
     
-    # Fit model
+    if [ \$NUM_SAMPLES -gt 450 ]; then
+        echo "Very large dataset detected (\$NUM_SAMPLES samples). Using ultra-conservative parameters."
+        SKETCH_SIZE="--sketch-size 5000"
+        MIN_K="--min-k 15"
+        MAX_K="--max-k 25"
+        EXTRA_PARAMS="--no-stream"
+    elif [ \$NUM_SAMPLES -gt 400 ]; then
+        echo "Large dataset detected (\$NUM_SAMPLES samples). Using conservative parameters."
+        SKETCH_SIZE="--sketch-size 7500"
+        MIN_K="--min-k 13"
+        MAX_K="--max-k 29"
+        EXTRA_PARAMS=""
+    else
+        echo "Standard dataset size. Using default parameters."
+        SKETCH_SIZE=""
+        MIN_K=""
+        MAX_K=""
+        EXTRA_PARAMS=""
+    fi
+    
+    # Memory checkpoint
+    echo "Memory before database creation:"
+    free -h
+    
+    # Create database with ultra-conservative parameters for very large datasets
+    echo "Creating PopPUNK database..."
+    poppunk --create-db --r-files assembly_list.txt \\
+            --output poppunk_db \\
+            --threads ${task.cpus} \\
+            \$SKETCH_SIZE \$MIN_K \$MAX_K \$EXTRA_PARAMS \\
+            --overwrite || exit 1
+    
+    # Memory checkpoint
+    echo "Memory after database creation:"
+    free -h
+    
+    # Fit model with memory-conscious settings
+    echo "Fitting PopPUNK model..."
     poppunk --fit-model --ref-db poppunk_db \\
-            --output poppunk_fit --threads ${task.cpus} || exit 1
+            --output poppunk_fit \\
+            --threads ${task.cpus} \\
+            --overwrite || exit 1
+    
+    # Memory checkpoint
+    echo "Memory after model fitting:"
+    free -h
     
     # Assign clusters
+    echo "Assigning clusters..."
     poppunk --assign-query --ref-db poppunk_db \\
             --q-files assembly_list.txt \\
-            --output poppunk_assigned --threads ${task.cpus} || exit 1
+            --output poppunk_assigned \\
+            --threads ${task.cpus} \\
+            --overwrite || exit 1
     
     # Find and copy the cluster assignment file
     find poppunk_assigned -name "*clusters.csv" -exec cp {} clusters.csv \\;
@@ -108,6 +172,9 @@ process POPPUNK {
     fi
     
     echo "Cluster assignments created successfully"
+    echo "Total clusters found: \$(tail -n +2 clusters.csv | cut -f2 | sort -u | wc -l)"
+    echo "Final memory status:"
+    free -h
     head -5 clusters.csv
     """
 }

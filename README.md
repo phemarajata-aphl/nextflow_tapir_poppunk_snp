@@ -100,11 +100,35 @@ The pipeline is optimized for your system:
 4. **Small clusters skipped**: Clusters with <3 genomes are automatically filtered out
 
 ### PopPUNK Issues
+
+#### Input Format Error
 If you encounter "Input reference list is misformatted" error:
 - This has been fixed in the latest version
 - PopPUNK requires tab-separated input (sample_name<TAB>file_path)
 - The pipeline now automatically creates properly formatted input files
 - See `POPPUNK_FIX.md` for technical details
+
+#### Segmentation Fault with Large Datasets
+If PopPUNK crashes with "Segmentation fault" when processing many files (>400):
+- **Ultra-conservative fix implemented**: Optimized for datasets up to 500+ files
+- **Automatic detection**: Pipeline detects very large datasets (>450) and uses ultra-conservative parameters
+- **Resource optimization**: 8 threads, 60GB memory, 48-hour time limit
+- **See `POPPUNK_PERSISTENT_SEGFAULT_FIX.md`** for complete technical details
+
+**For persistent segmentation faults:**
+```bash
+# Use ultra-conservative settings (automatically applied for >450 files)
+nextflow run nextflow_tapir_poppunk_snp.nf --input ./assemblies --resultsDir ./results
+
+# Alternative: Use chunked approach for extremely large datasets
+nextflow run poppunk_chunked_alternative.nf --input ./assemblies --resultsDir ./results --chunk_size 200
+```
+
+**Monitor progress:**
+```bash
+# Track PopPUNK progress in real-time
+./monitor_poppunk.sh
+```
 
 ### Ubuntu Docker Issues
 If you encounter Docker mount errors like "Mounts denied", "path not shared", or "Duplicate mount point":

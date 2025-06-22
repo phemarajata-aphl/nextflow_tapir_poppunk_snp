@@ -1,0 +1,16 @@
+Initial memory status:
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       664Mi       3.7Gi       0.0Ki       3.3Gi       6.7Gi
+Swap:          1.0Gi          0B       1.0Gi
+Found 334 assembly files
+First few entries in assembly list:
+Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta
+Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas.fasta
+Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica	/home/phemarajata/nextflow_tapir_poppunk_snp/work/a0/409fd0053ab44caf8d22540c316048/Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica.fasta
+Processing 334 samples
+Standard dataset size. Using default parameters.
+Memory before database creation:
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       538Mi       3.9Gi       0.0Ki       3.3Gi       6.8Gi
+Swap:          1.0Gi          0B       1.0Gi
+Creating PopPUNK database...
