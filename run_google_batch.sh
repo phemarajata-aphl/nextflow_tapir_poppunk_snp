@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # TAPIR + PopPUNK + Per-Clade SNP Analysis Pipeline
-# Google Cloud Batch execution script
+# Google Cloud Batch execution script with fixed GCS file detection
 # Project: erudite-pod-307018
 
 # Google Cloud configuration
@@ -16,6 +16,9 @@ echo "Project: $PROJECT_ID"
 echo "Input: $INPUT_BUCKET"
 echo "Results: $RESULTS_BUCKET"
 echo "Work directory: $WORK_BUCKET"
+echo ""
+echo "💡 Tip: If you encounter issues finding FASTA files, run:"
+echo "   ./diagnose_gcs.sh"
 echo ""
 
 # Check if gcloud is configured
@@ -40,15 +43,67 @@ gcloud services enable storage.googleapis.com --quiet
 
 # Check if input bucket exists and has files
 echo "Checking input data..."
-FASTA_COUNT=$(gsutil ls "$INPUT_BUCKET/*.{fasta,fa,fas}" 2>/dev/null | wc -l)
-if [ $FASTA_COUNT -eq 0 ]; then
-    echo "Warning: No FASTA files found in $INPUT_BUCKET"
-    echo "Please ensure your FASTA files are uploaded to the input bucket."
-    echo "Supported extensions: .fasta, .fa, .fas"
+
+# Check if bucket exists first
+if ! gsutil ls "$INPUT_BUCKET/" >/dev/null 2>&1; then
+    echo "Error: Input bucket $INPUT_BUCKET does not exist or is not accessible!"
+    echo "Please check:"
+    echo "1. Bucket name is correct"
+    echo "2. You have read permissions"
+    echo "3. Bucket exists in the project"
     exit 1
 fi
 
-echo "Found $FASTA_COUNT FASTA files in input bucket"
+# Count FASTA files with individual checks for each extension
+echo "Scanning for FASTA files..."
+FASTA_COUNT=0
+
+# Check .fasta files
+FASTA_FILES=$(gsutil ls "$INPUT_BUCKET/*.fasta" 2>/dev/null | wc -l)
+FASTA_COUNT=$((FASTA_COUNT + FASTA_FILES))
+if [ $FASTA_FILES -gt 0 ]; then
+    echo "Found $FASTA_FILES .fasta files"
+fi
+
+# Check .fa files
+FA_FILES=$(gsutil ls "$INPUT_BUCKET/*.fa" 2>/dev/null | wc -l)
+FASTA_COUNT=$((FASTA_COUNT + FA_FILES))
+if [ $FA_FILES -gt 0 ]; then
+    echo "Found $FA_FILES .fa files"
+fi
+
+# Check .fas files
+FAS_FILES=$(gsutil ls "$INPUT_BUCKET/*.fas" 2>/dev/null | wc -l)
+FASTA_COUNT=$((FASTA_COUNT + FAS_FILES))
+if [ $FAS_FILES -gt 0 ]; then
+    echo "Found $FAS_FILES .fas files"
+fi
+
+if [ $FASTA_COUNT -eq 0 ]; then
+    echo "Error: No FASTA files found in $INPUT_BUCKET"
+    echo ""
+    echo "Available files in bucket:"
+    gsutil ls "$INPUT_BUCKET/" | head -10
+    echo ""
+    echo "Please ensure your FASTA files are uploaded with supported extensions:"
+    echo "- .fasta"
+    echo "- .fa" 
+    echo "- .fas"
+    echo ""
+    echo "Upload examples:"
+    echo "gsutil -m cp ./local_assemblies/*.fasta $INPUT_BUCKET/"
+    echo "gsutil -m cp ./local_assemblies/*.fa $INPUT_BUCKET/"
+    echo "gsutil -m cp ./local_assemblies/*.fas $INPUT_BUCKET/"
+    echo ""
+    echo "🔧 For detailed troubleshooting, run:"
+    echo "   ./diagnose_gcs.sh"
+    echo ""
+    echo "📋 To check what's currently in the bucket:"
+    echo "   gsutil ls -l $INPUT_BUCKET/"
+    exit 1
+fi
+
+echo "Total: Found $FASTA_COUNT FASTA files in input bucket"
 
 # Create results bucket if it doesn't exist
 echo "Ensuring results bucket exists..."
