@@ -100,16 +100,20 @@ The pipeline is optimized for your system:
 4. **Small clusters skipped**: Clusters with <3 genomes are automatically filtered out
 
 ### Ubuntu Docker Issues
-If you encounter "Mounts denied" or "path not shared" errors:
+If you encounter Docker mount errors like "Mounts denied", "path not shared", or "Duplicate mount point":
 
 1. **Run the setup script first:**
    ```bash
    ./setup_ubuntu_docker.sh
    ```
 
-2. **Use the Ubuntu Docker profile:**
+2. **Choose the appropriate profile:**
    ```bash
+   # Recommended for Ubuntu
    nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+   
+   # Alternative if still having mount issues
+   nextflow run nextflow_tapir_poppunk_snp.nf -profile local_tmp --input ./assemblies --resultsDir ./results
    ```
 
 3. **Check Docker permissions:**

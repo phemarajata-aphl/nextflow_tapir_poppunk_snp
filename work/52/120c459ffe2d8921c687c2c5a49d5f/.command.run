@@ -1,0 +1,466 @@
+#!/bin/bash
+### ---
+### name: 'POPPUNK (PopPUNK_clustering)'
+### container: 'staphb/poppunk:2.7.5'
+### outputs:
+### - 'clusters.csv'
+### ...
+set -e
+set -u
+NXF_DEBUG=${NXF_DEBUG:=0}; [[ $NXF_DEBUG > 1 ]] && set -x
+NXF_ENTRY=${1:-nxf_main}
+
+nxf_tree() {
+    local pid=$1
+
+    declare -a ALL_CHILDREN
+    while read P PP;do
+        ALL_CHILDREN[$PP]+=" $P"
+    done < <(ps -e -o pid= -o ppid=)
+
+    pstat() {
+        local x_pid=$1
+        local STATUS=$(2> /dev/null < /proc/$1/status grep -E 'Vm|ctxt')
+
+        if [ $? = 0 ]; then
+        local  x_vsz=$(echo "$STATUS" | grep VmSize | awk '{print $2}' || echo -n '0')
+        local  x_rss=$(echo "$STATUS" | grep VmRSS | awk '{print $2}' || echo -n '0')
+        local x_peak=$(echo "$STATUS" | grep -E 'VmPeak|VmHWM' | sed 's/^.*:\s*//' | sed 's/[\sa-zA-Z]*$//' | tr '\n' ' ' || echo -n '0 0')
+        local x_pmem=$(awk -v rss=$x_rss -v mem_tot=$mem_tot 'BEGIN {printf "%.0f", rss/mem_tot*100*10}' || echo -n '0')
+        local vol_ctxt=$(echo "$STATUS" | grep '\bvoluntary_ctxt_switches' | awk '{print $2}' || echo -n '0')
+        local inv_ctxt=$(echo "$STATUS" | grep '\bnonvoluntary_ctxt_switches' | awk '{print $2}' || echo -n '0')
+        cpu_stat[x_pid]="$x_pid $x_pmem $x_vsz $x_rss $x_peak $vol_ctxt $inv_ctxt"
+        fi
+    }
+
+    pwalk() {
+        pstat $1
+        for i in ${ALL_CHILDREN[$1]:=}; do pwalk $i; done
+    }
+
+    pwalk $1
+}
+
+nxf_stat() {
+    cpu_stat=()
+    nxf_tree $1
+
+    declare -a sum=(0 0 0 0 0 0 0 0)
+    local pid
+    local i
+    for pid in "${!cpu_stat[@]}"; do
+        local row=(${cpu_stat[pid]})
+        [ $NXF_DEBUG = 1 ] && echo "++ stat mem=${row[*]}"
+        for i in "${!row[@]}"; do
+        if [ $i != 0 ]; then
+            sum[i]=$((sum[i]+row[i]))
+        fi
+        done
+    done
+
+    [ $NXF_DEBUG = 1 ] && echo -e "++ stat SUM=${sum[*]}"
+
+    for i in {1..7}; do
+        if [ ${sum[i]} -lt ${cpu_peak[i]} ]; then
+            sum[i]=${cpu_peak[i]}
+        else
+            cpu_peak[i]=${sum[i]}
+        fi
+    done
+
+    [ $NXF_DEBUG = 1 ] && echo -e "++ stat PEAK=${sum[*]}\n"
+    nxf_stat_ret=(${sum[*]})
+}
+
+nxf_mem_watch() {
+    set -o pipefail
+    local pid=$1
+    local trace_file=.command.trace
+    local count=0;
+    declare -a cpu_stat=(0 0 0 0 0 0 0 0)
+    declare -a cpu_peak=(0 0 0 0 0 0 0 0)
+    local mem_tot=$(< /proc/meminfo grep MemTotal | awk '{print $2}')
+    local timeout
+    local DONE
+    local STOP=''
+
+    [ $NXF_DEBUG = 1 ] && nxf_sleep 0.2 && ps fx
+
+    while true; do
+        nxf_stat $pid
+        if [ $count -lt 10 ]; then timeout=1;
+        elif [ $count -lt 120 ]; then timeout=5;
+        else timeout=30;
+        fi
+        read -t $timeout -r DONE || true
+        [[ $DONE ]] && break
+        if [ ! -e /proc/$pid ]; then
+            [ ! $STOP ] && STOP=$(nxf_date)
+            [ $(($(nxf_date)-STOP)) -gt 10000 ] && break
+        fi
+        count=$((count+1))
+    done
+
+    echo "%mem=${nxf_stat_ret[1]}"      >> $trace_file
+    echo "vmem=${nxf_stat_ret[2]}"      >> $trace_file
+    echo "rss=${nxf_stat_ret[3]}"       >> $trace_file
+    echo "peak_vmem=${nxf_stat_ret[4]}" >> $trace_file
+    echo "peak_rss=${nxf_stat_ret[5]}"  >> $trace_file
+    echo "vol_ctxt=${nxf_stat_ret[6]}"  >> $trace_file
+    echo "inv_ctxt=${nxf_stat_ret[7]}"  >> $trace_file
+}
+
+nxf_write_trace() {
+    echo "nextflow.trace/v2"           > $trace_file
+    echo "realtime=$wall_time"         >> $trace_file
+    echo "%cpu=$ucpu"                  >> $trace_file
+    echo "cpu_model=$cpu_model"        >> $trace_file
+    echo "rchar=${io_stat1[0]}"        >> $trace_file
+    echo "wchar=${io_stat1[1]}"        >> $trace_file
+    echo "syscr=${io_stat1[2]}"        >> $trace_file
+    echo "syscw=${io_stat1[3]}"        >> $trace_file
+    echo "read_bytes=${io_stat1[4]}"   >> $trace_file
+    echo "write_bytes=${io_stat1[5]}"  >> $trace_file
+}
+
+nxf_trace_mac() {
+    local start_millis=$(nxf_date)
+
+    /bin/bash -ue /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/.command.sh
+
+    local end_millis=$(nxf_date)
+    local wall_time=$((end_millis-start_millis))
+    local ucpu=''
+    local cpu_model=''
+    local io_stat1=('' '' '' '' '' '')
+    nxf_write_trace
+}
+
+nxf_fd() {
+    local FD=11
+    while [ -e /proc/$$/fd/$FD ]; do FD=$((FD+1)); done
+    echo $FD
+}
+
+nxf_trace_linux() {
+    local pid=$$
+    command -v ps &>/dev/null || { >&2 echo "Command 'ps' required by nextflow to collect task metrics cannot be found"; exit 1; }
+    local num_cpus=$(< /proc/cpuinfo grep '^processor' -c)
+    local cpu_model=$(< /proc/cpuinfo grep '^model name' | head -n 1 | awk 'BEGIN{FS="\t: "} { print $2 }')
+    local tot_time0=$(grep '^cpu ' /proc/stat | awk '{sum=$2+$3+$4+$5+$6+$7+$8+$9; printf "%.0f",sum}')
+    local cpu_time0=$(2> /dev/null < /proc/$pid/stat awk '{printf "%.0f", ($16+$17)*10 }' || echo -n 'X')
+    local io_stat0=($(2> /dev/null < /proc/$pid/io sed 's/^.*:\s*//' | head -n 6 | tr '\n' ' ' || echo -n '0 0 0 0 0 0'))
+    local start_millis=$(nxf_date)
+    trap 'kill $mem_proc' ERR
+    
+    /bin/bash -ue /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/.command.sh &
+    local task=$!
+
+    mem_fd=$(nxf_fd)
+    eval "exec $mem_fd> >(nxf_mem_watch $task)"
+    local mem_proc=$!
+
+    wait $task
+
+    local end_millis=$(nxf_date)
+    local tot_time1=$(grep '^cpu ' /proc/stat | awk '{sum=$2+$3+$4+$5+$6+$7+$8+$9; printf "%.0f",sum}')
+    local cpu_time1=$(2> /dev/null < /proc/$pid/stat awk '{printf "%.0f", ($16+$17)*10 }' || echo -n 'X')
+    local ucpu=$(awk -v p1=$cpu_time1 -v p0=$cpu_time0 -v t1=$tot_time1 -v t0=$tot_time0 -v n=$num_cpus 'BEGIN { pct=(p1-p0)/(t1-t0)*100*n; printf("%.0f", pct>0 ? pct : 0) }' )
+
+    local io_stat1=($(2> /dev/null < /proc/$pid/io sed 's/^.*:\s*//' | head -n 6 | tr '\n' ' ' || echo -n '0 0 0 0 0 0'))
+    local i
+    for i in {0..5}; do
+        io_stat1[i]=$((io_stat1[i]-io_stat0[i]))
+    done
+
+    local wall_time=$((end_millis-start_millis))
+    [ $NXF_DEBUG = 1 ] && echo "+++ STATS %CPU=$ucpu TIME=$wall_time I/O=${io_stat1[*]}"
+
+    echo "nextflow.trace/v2"           > $trace_file
+    echo "realtime=$wall_time"         >> $trace_file
+    echo "%cpu=$ucpu"                  >> $trace_file
+    echo "cpu_model=$cpu_model"        >> $trace_file
+    echo "rchar=${io_stat1[0]}"        >> $trace_file
+    echo "wchar=${io_stat1[1]}"        >> $trace_file
+    echo "syscr=${io_stat1[2]}"        >> $trace_file
+    echo "syscw=${io_stat1[3]}"        >> $trace_file
+    echo "read_bytes=${io_stat1[4]}"   >> $trace_file
+    echo "write_bytes=${io_stat1[5]}"  >> $trace_file
+
+    [ -e /proc/$mem_proc ] && eval "echo 'DONE' >&$mem_fd" || true
+    wait $mem_proc 2>/dev/null || true
+    while [ -e /proc/$mem_proc ]; do nxf_sleep 0.1; done
+    [ ${NXF_OWNER:=''} ] && (shopt -s extglob; GLOBIGNORE='..'; chown -fR --from root $NXF_OWNER /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/{*,.*}) || true
+}
+
+nxf_trace() {
+    local trace_file=.command.trace
+    touch $trace_file
+    if [[ $(uname) = Darwin ]]; then
+        nxf_trace_mac
+    else
+        nxf_trace_linux
+    fi
+}
+nxf_container_env() {
+cat << EOF
+export TMPDIR="/home/phemarajata/nextflow_tapir_poppunk_snp/tmp"
+export NXF_TEMP="/home/phemarajata/nextflow_tapir_poppunk_snp/tmp"
+EOF
+}
+
+nxf_sleep() {
+  sleep $1 2>/dev/null || sleep 1;
+}
+
+nxf_date() {
+    local ts=$(date +%s%3N);
+    if [[ ${#ts} == 10 ]]; then echo ${ts}000
+    elif [[ $ts == *%3N ]]; then echo ${ts/\%3N/000}
+    elif [[ $ts == *3N ]]; then echo ${ts/3N/000}
+    elif [[ ${#ts} == 13 ]]; then echo $ts
+    else echo "Unexpected timestamp value: $ts"; exit 1
+    fi
+}
+
+nxf_env() {
+    echo '============= task environment ============='
+    env | sort | sed "s/\(.*\)AWS\(.*\)=\(.\{6\}\).*/\1AWS\2=\3xxxxxxxxxxxxx/"
+    echo '============= task output =================='
+}
+
+nxf_kill() {
+    declare -a children
+    while read P PP;do
+        children[$PP]+=" $P"
+    done < <(ps -e -o pid= -o ppid=)
+
+    kill_all() {
+        [[ $1 != $$ ]] && kill $1 2>/dev/null || true
+        for i in ${children[$1]:=}; do kill_all $i; done
+    }
+
+    kill_all $1
+}
+
+nxf_mktemp() {
+    local base=${1:-/tmp}
+    mkdir -p "$base"
+    if [[ $(uname) = Darwin ]]; then mktemp -d $base/nxf.XXXXXXXXXX
+    else TMPDIR="$base" mktemp -d -t nxf.XXXXXXXXXX
+    fi
+}
+
+nxf_fs_copy() {
+  local source=$1
+  local target=$2
+  local basedir=$(dirname $1)
+  mkdir -p $target/$basedir
+  cp -fRL $source $target/$basedir
+}
+
+nxf_fs_move() {
+  local source=$1
+  local target=$2
+  local basedir=$(dirname $1)
+  mkdir -p $target/$basedir
+  mv -f $source $target/$basedir
+}
+
+nxf_fs_rsync() {
+  rsync -rRl $1 $2
+}
+
+nxf_fs_rclone() {
+  rclone copyto $1 $2/$1
+}
+
+nxf_fs_fcp() {
+  fcp $1 $2/$1
+}
+
+on_exit() {
+    exit_status=${nxf_main_ret:=$?}
+    printf -- $exit_status > /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/.exitcode
+    set +u
+    docker rm $NXF_BOXID &>/dev/null || true
+    exit $exit_status
+}
+
+on_term() {
+    set +e
+    docker stop $NXF_BOXID
+}
+
+nxf_launch() {
+    docker run -i --cpu-shares 22528 --memory 49152m -e "NXF_TASK_WORKDIR" -e "NXF_DEBUG=${NXF_DEBUG:=0}" -e "NXF_OWNER=$(id -u):$(id -g)" -v /tmp:/tmp -v /home/phemarajata:/home/phemarajata -w "$NXF_TASK_WORKDIR" -u $(id -u):$(id -g) --tmpfs /tmp:rw,noexec,nosuid,size=4g -v /var/run/docker.sock:/var/run/docker.sock --name $NXF_BOXID staphb/poppunk:2.7.5 /bin/bash -c "eval $(nxf_container_env); /bin/bash /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/.command.run nxf_trace"
+}
+
+nxf_stage() {
+    true
+    # stage input files
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_402a_GCF_001980775.1_Thailand.fasta Burkholderia_pseudomallei_402a_GCF_001980775.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008790.fasta ERS008790.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012376.fasta ERS012376.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas.fasta Burkholderia_pseudomallei_2002721684_GCF_002110925.1_USA_Texas.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008819.fasta ERS008819.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008829.fasta ERS008829.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008809.fasta ERS008809.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_619s008_GCF_001326955.2_Malaysia.fasta Burkholderia_pseudomallei_619s008_GCF_001326955.2_Malaysia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_44W_S64_GCF_014713025.1_Laos.fasta Burkholderia_pseudomallei_44W_S64_GCF_014713025.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008816.fasta ERS008816.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008836.fasta ERS008836.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013346.fasta ERS013346.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_4802_GCF_003268115.1_Viet_Nam.fasta Burkholderia_pseudomallei_4802_GCF_003268115.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012369.fasta ERS012369.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_ABCPW_91_GCF_000774405.1_Australia.fasta Burkholderia_pseudomallei_ABCPW_91_GCF_000774405.1_Australia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_49W_S68_GCF_014712965.1_Laos.fasta Burkholderia_pseudomallei_49W_S68_GCF_014712965.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_50W_S69_GCF_014712935.1_Laos.fasta Burkholderia_pseudomallei_50W_S69_GCF_014712935.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_577ci_GCF_001980815.1_Thailand.fasta Burkholderia_pseudomallei_577ci_GCF_001980815.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012306.fasta ERS012306.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012340.fasta ERS012340.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013364.fasta ERS013364.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_619s007_GCF_001326935.2_Malaysia.fasta Burkholderia_pseudomallei_619s007_GCF_001326935.2_Malaysia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012320.fasta ERS012320.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012380.fasta ERS012380.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/SRR12527885_contigs.fasta SRR12527885_contigs.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012303.fasta ERS012303.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012358.fasta ERS012358.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012363.fasta ERS012363.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_40S_S61_GCF_014713055.1_Laos.fasta Burkholderia_pseudomallei_40S_S61_GCF_014713055.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012338.fasta ERS012338.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_58W_S73_GCF_014712875.1_Laos.fasta Burkholderia_pseudomallei_58W_S73_GCF_014712875.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008804.fasta ERS008804.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008820.fasta ERS008820.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012351.fasta ERS012351.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008785.fasta ERS008785.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013360.fasta ERS013360.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_576_GCF_000182195.1_Thailand.fasta Burkholderia_pseudomallei_576_GCF_000182195.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand.fasta Burkholderia_pseudomallei_134K_GCF_009830075.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008798.fasta ERS008798.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013353.fasta ERS013353.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/SRR12527871_contigs.fasta SRR12527871_contigs.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_ABCPW_1_GCF_000774965.1_Australia.fasta Burkholderia_pseudomallei_ABCPW_1_GCF_000774965.1_Australia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013343.fasta ERS013343.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_4702_GCF_009827035.1_Viet_Nam.fasta Burkholderia_pseudomallei_4702_GCF_009827035.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008833.fasta ERS008833.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_8400_GCF_025847635.1_Viet_Nam.fasta Burkholderia_pseudomallei_8400_GCF_025847635.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008786.fasta ERS008786.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_619s006_GCF_001212705.2_Malaysia.fasta Burkholderia_pseudomallei_619s006_GCF_001212705.2_Malaysia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012362.fasta ERS012362.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008803.fasta ERS008803.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013348.fasta ERS013348.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008821.fasta ERS008821.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008838.fasta ERS008838.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012316.fasta ERS012316.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_ABCPW_30_GCF_000774495.1_Australia.fasta Burkholderia_pseudomallei_ABCPW_30_GCF_000774495.1_Australia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_354a_GCF_000259815.1_Thailand.fasta Burkholderia_pseudomallei_354a_GCF_000259815.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_51W_S70_GCF_014712915.1_Laos.fasta Burkholderia_pseudomallei_51W_S70_GCF_014712915.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012356.fasta ERS012356.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_406e_GCF_000410895.1_Thailand.fasta Burkholderia_pseudomallei_406e_GCF_000410895.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013354.fasta ERS013354.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008844.fasta ERS008844.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_316c_GCF_001980755.1_Thailand.fasta Burkholderia_pseudomallei_316c_GCF_001980755.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008797.fasta ERS008797.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013342.fasta ERS013342.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012328.fasta ERS012328.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008822.fasta ERS008822.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_91W_S76_GCF_014712775.1_Laos.fasta Burkholderia_pseudomallei_91W_S76_GCF_014712775.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_2011756296_GCF_002110985.1_USA_Puerto_Rico.fasta Burkholderia_pseudomallei_2011756296_GCF_002110985.1_USA_Puerto_Rico.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_45S_S65_GCF_014713015.1_Laos.fasta Burkholderia_pseudomallei_45S_S65_GCF_014713015.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_46W_S66_GCF_014712945.1_Laos.fasta Burkholderia_pseudomallei_46W_S66_GCF_014712945.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013355.fasta ERS013355.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013365.fasta ERS013365.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008835.fasta ERS008835.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013345.fasta ERS013345.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_BDD_GCF_000756905.1_Australia_Townsville_Queensland.fasta Burkholderia_pseudomallei_BDD_GCF_000756905.1_Australia_Townsville_Queensland.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012327.fasta ERS012327.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_ABCPW_107_GCF_000773235.1_Australia.fasta Burkholderia_pseudomallei_ABCPW_107_GCF_000773235.1_Australia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012347.fasta ERS012347.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012307.fasta ERS012307.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012317.fasta ERS012317.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_60W_S74_GCF_014712825.1_Laos.fasta Burkholderia_pseudomallei_60W_S74_GCF_014712825.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_52W_S71_GCF_014712835.1_Laos.fasta Burkholderia_pseudomallei_52W_S71_GCF_014712835.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand.fasta Burkholderia_pseudomallei_134_GCF_009830095.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012314.fasta ERS012314.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012334.fasta ERS012334.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_47W_S67_GCF_014712955.1_Laos.fasta Burkholderia_pseudomallei_47W_S67_GCF_014712955.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013358.fasta ERS013358.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008828.fasta ERS008828.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_64W_S75_GCF_014712815.1_Laos.fasta Burkholderia_pseudomallei_64W_S75_GCF_014712815.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012332.fasta ERS012332.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008781.fasta ERS008781.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica.fasta Burkholderia_pseudomallei_2010007509_GCF_002111145.1_USA_Arizona_ex_Costa_Rica.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008825.fasta ERS008825.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008792.fasta ERS008792.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008784.fasta ERS008784.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013352.fasta ERS013352.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_619s004_GCF_001212405.2_Malaysia.fasta Burkholderia_pseudomallei_619s004_GCF_001212405.2_Malaysia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta Burkholderia_pseudomallei_1701_GCF_003268105.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008817.fasta ERS008817.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008837.fasta ERS008837.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_28P_GCF_025847415.1_Viet_Nam.fasta Burkholderia_pseudomallei_28P_GCF_025847415.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_43W_S62_GCF_014713065.1_Laos.fasta Burkholderia_pseudomallei_43W_S62_GCF_014713065.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_284_GCF_025847905.1_Viet_Nam.fasta Burkholderia_pseudomallei_284_GCF_025847905.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_4822_GCF_009826725.1_Viet_Nam.fasta Burkholderia_pseudomallei_4822_GCF_009826725.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012331.fasta ERS012331.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008795.fasta ERS008795.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008830.fasta ERS008830.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS013363.fasta ERS013363.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_53W_S72_GCF_014712895.1_Laos.fasta Burkholderia_pseudomallei_53W_S72_GCF_014712895.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_7400_GCF_025848135.1_Viet_Nam.fasta Burkholderia_pseudomallei_7400_GCF_025848135.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012312.fasta ERS012312.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_2002734728_GCF_002111105.1_USA_California.fasta Burkholderia_pseudomallei_2002734728_GCF_002111105.1_USA_California.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012309.fasta ERS012309.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_316a_GCF_001980725.1_Thailand.fasta Burkholderia_pseudomallei_316a_GCF_001980725.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008813.fasta ERS008813.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012354.fasta ERS012354.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_354e_GCF_000259795.1_Thailand.fasta Burkholderia_pseudomallei_354e_GCF_000259795.1_Thailand.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012324.fasta ERS012324.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008841.fasta ERS008841.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_4811_GCF_003268075.1_Viet_Nam.fasta Burkholderia_pseudomallei_4811_GCF_003268075.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012377.fasta ERS012377.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012359.fasta ERS012359.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_7801_GCF_025848015.1_Viet_Nam.fasta Burkholderia_pseudomallei_7801_GCF_025848015.1_Viet_Nam.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012365.fasta ERS012365.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_619s005_GCF_001207785.2_Malaysia.fasta Burkholderia_pseudomallei_619s005_GCF_001207785.2_Malaysia.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008824.fasta ERS008824.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012330.fasta ERS012330.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012370.fasta ERS012370.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS008794.fasta ERS008794.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012313.fasta ERS012313.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/Burkholderia_pseudomallei_43S_S63_GCF_014713085.1_Laos.fasta Burkholderia_pseudomallei_43S_S63_GCF_014713085.1_Laos.fasta
+    ln -s /home/phemarajata/Downloads/bucket/contextual_samples/ERS012308.fasta ERS012308.fasta
+}
+
+nxf_unstage() {
+    true
+    [[ ${nxf_main_ret:=0} != 0 ]] && return
+}
+
+nxf_main() {
+    trap on_exit EXIT
+    trap on_term TERM INT USR2
+    trap '' USR1
+
+    [[ "${NXF_CHDIR:-}" ]] && cd "$NXF_CHDIR"
+    export NXF_BOXID="nxf-$(dd bs=18 count=1 if=/dev/urandom 2>/dev/null | base64 | tr +/ 0A | tr -d '\r\n')"
+    NXF_SCRATCH=''
+    [[ $NXF_DEBUG > 0 ]] && nxf_env
+    touch /home/phemarajata/nextflow_tapir_poppunk_snp/work/52/120c459ffe2d8921c687c2c5a49d5f/.command.begin
+    set +u
+    # beforeScript directive
+    mkdir -p ${PWD}/tmp
+    set -u
+    [[ $NXF_SCRATCH ]] && cd $NXF_SCRATCH
+    export NXF_TASK_WORKDIR="$PWD"
+    nxf_stage
+
+    set +e
+    (set -o pipefail; (nxf_launch | tee .command.out) 3>&1 1>&2 2>&3 | tee .command.err) &
+    pid=$!
+    wait $pid || nxf_main_ret=$?
+    nxf_unstage
+}
+
+$NXF_ENTRY
