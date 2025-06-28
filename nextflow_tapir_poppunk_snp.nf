@@ -138,22 +138,33 @@ process POPPUNK {
     echo "Memory before sketching:"
     free -h || echo "Memory info not available"
     
-    # Step 1: Create database and fit model in one step (corrected approach)
-    echo "Step 1: Creating PopPUNK database with model fitting..."
+    # Step 1: Create database only (separate from model fitting)
+    echo "Step 1: Creating PopPUNK database..."
     poppunk --create-db --r-files assembly_list.txt \\
             --output poppunk_db \\
             --threads ${task.cpus} \\
             \$SKETCH_SIZE \$MIN_K \$MAX_K \$EXTRA_PARAMS \\
-            --fit-model bgmm \\
             --overwrite || exit 1
     
     # Memory checkpoint
-    echo "Memory after database creation and model fitting:"
+    echo "Memory after database creation:"
     free -h || echo "Memory info not available"
     
-    # Step 2: Quality control check (if available)
-    echo "Step 2: Running PopPUNK QC..."
-    poppunk --qc-db --ref-db poppunk_db \\
+    # Step 2: Fit model separately (required separate step)
+    echo "Step 2: Fitting PopPUNK model..."
+    poppunk --fit-model bgmm \\
+            --ref-db poppunk_db \\
+            --output poppunk_fit \\
+            --threads ${task.cpus} \\
+            --overwrite || exit 1
+    
+    # Memory checkpoint
+    echo "Memory after model fitting:"
+    free -h || echo "Memory info not available"
+    
+    # Step 3: Quality control check (if available)
+    echo "Step 3: Running PopPUNK QC..."
+    poppunk --qc-db --ref-db poppunk_fit \\
             --output qc_results \\
             --threads ${task.cpus} \\
             --overwrite || {
@@ -168,9 +179,9 @@ process POPPUNK {
         cp qc_results/qc_summary.txt qc_report.txt
     fi
     
-    # Step 3: Assign clusters using the database
-    echo "Step 3: Assigning clusters..."
-    poppunk --assign-query --ref-db poppunk_db \\
+    # Step 4: Assign clusters using the fitted model
+    echo "Step 4: Assigning clusters..."
+    poppunk --assign-query --ref-db poppunk_fit \\
             --q-files assembly_list.txt \\
             --output poppunk_assigned \\
             --threads ${task.cpus} \\
@@ -208,9 +219,10 @@ process POPPUNK {
     # Summary of steps completed
     echo ""
     echo "=== PopPUNK Analysis Summary ==="
-    echo "1. Database creation with model fitting: Completed"
-    echo "2. QC check: \$([ -f qc_report.txt ] && echo 'Completed' || echo 'Skipped')"
-    echo "3. Cluster assignment: Completed"
+    echo "1. Database creation: Completed"
+    echo "2. Model fitting: Completed"
+    echo "3. QC check: \$([ -f qc_report.txt ] && echo 'Completed' || echo 'Skipped')"
+    echo "4. Cluster assignment: Completed"
     echo "Total samples processed: \$NUM_SAMPLES"
     echo "Total clusters identified: \$(tail -n +2 clusters.csv | cut -f2 | sort -u | wc -l)"
     """
