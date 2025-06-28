@@ -162,9 +162,9 @@ process POPPUNK {
     echo "Memory after model fitting:"
     free -h || echo "Memory info not available"
     
-    # Step 3: Quality control check (if available)
-    echo "Step 3: Running PopPUNK QC..."
-    poppunk --qc-db --ref-db poppunk_fit \\
+    # Step 3: Quality control check (optional - skip if problematic)
+    echo "Step 3: Running PopPUNK QC (optional)..."
+    poppunk --qc-db --ref-db poppunk_db \\
             --output qc_results \\
             --threads ${task.cpus} \\
             --overwrite || {
@@ -179,13 +179,22 @@ process POPPUNK {
         cp qc_results/qc_summary.txt qc_report.txt
     fi
     
-    # Step 4: Assign clusters using the fitted model
-    echo "Step 4: Assigning clusters..."
-    poppunk --assign-query --ref-db poppunk_fit \\
-            --q-files assembly_list.txt \\
-            --output poppunk_assigned \\
-            --threads ${task.cpus} \\
-            --overwrite || exit 1
+    # Step 4: Assign clusters using poppunk_assign (following latest documentation)
+    echo "Step 4: Assigning clusters using poppunk_assign..."
+    poppunk_assign --db poppunk_fit \\
+                   --query assembly_list.txt \\
+                   --output poppunk_assigned \\
+                   --threads ${task.cpus} \\
+                   --overwrite || {
+        echo "poppunk_assign failed, trying fallback with poppunk --use-model..."
+        
+        # Fallback to poppunk --use-model if poppunk_assign is not available
+        poppunk --use-model --ref-db poppunk_fit \\
+                --q-files assembly_list.txt \\
+                --output poppunk_assigned \\
+                --threads ${task.cpus} \\
+                --overwrite || exit 1
+    }
     
     # Find and copy the cluster assignment file
     find poppunk_assigned -name "*clusters.csv" -exec cp {} clusters.csv \\;

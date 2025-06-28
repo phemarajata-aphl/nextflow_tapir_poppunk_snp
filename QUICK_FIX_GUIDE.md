@@ -1,67 +1,61 @@
-# Quick Fix Guide
+# Quick Fix Guide - PopPUNK QC and Assignment
 
-## The Problems
-1. **Multi-channel output error** - POPPUNK process has multiple outputs but workflow expects single output
-2. **Input file detection error** - Pipeline can't find FASTA files in the specified directory
+## 🚨 Issues Fixed
 
-## The Solutions
+1. **Step 3 QC Failed**: `FileNotFoundError: 'poppunk_fit/poppunk_fit.dists.pkl'`
+2. **Step 4 Assignment Failed**: `poppunk: error: one of the arguments --create-db --qc-db --fit-model --use-model is required`
 
-### ✅ Problem 1: FIXED
-Updated the workflow to properly handle POPPUNK's multiple outputs:
-```groovy
-// Extract outputs correctly
-poppunk_results = POPPUNK(assemblies_ch)
-clusters_csv = poppunk_results[0]  // clusters.csv
-qc_report = poppunk_results[1]     // qc_report.txt (optional)
+## ✅ Solutions Applied
+
+### Step 3 QC Fix:
+```bash
+# Before: poppunk --qc-db --ref-db poppunk_fit  ❌
+# After:  poppunk --qc-db --ref-db poppunk_db   ✅
 ```
 
-### 🔍 Problem 2: NEEDS INVESTIGATION
-The input directory issue needs to be debugged on your system.
+### Step 4 Assignment Fix:
+```bash
+# Before: poppunk --assign-query  ❌
+# After:  poppunk_assign --db     ✅ (with fallback to --use-model)
+```
 
-## What to Do Next
+## 🚀 Quick Commands
 
-### Step 1: Debug the Input Directory
+### Resume Your Failed Pipeline:
 ```bash
 cd ~/nextflow_tapir_poppunk_snp
-./fix_pipeline_errors.sh debug-input /mnt/disks/ngs-data/subset_100
+./fix_poppunk_final.sh resume /mnt/disks/ngs-data/subset_100 /mnt/disks/ngs-data/results_322_genomes_poppunk
 ```
 
-This will tell you:
-- Does the directory exist?
-- What files are actually there?
-- What file extensions are present?
-
-### Step 2: Run the Fixed Pipeline
-Once you confirm the input directory is correct:
+### Test the Fixes First:
 ```bash
-./fix_pipeline_errors.sh run-fixed /mnt/disks/ngs-data/subset_100 /mnt/disks/ngs-data/results_322_genomes_poppunk
+./fix_poppunk_final.sh test-commands
 ```
 
-## Common Input Issues & Solutions
-
-### Issue: Directory doesn't exist
-**Check:** `ls -la /mnt/disks/ngs-data/subset_100`
-**Solution:** Verify the correct path
-
-### Issue: Files have different extensions
-**Check:** `ls /mnt/disks/ngs-data/subset_100 | head -5`
-**Solution:** Rename files or update the pattern
-
-### Issue: Files exist but wrong extensions
-**Example:** Files are `.fna` instead of `.fasta`
-**Solution:** 
+### Run Fresh with All Fixes:
 ```bash
-cd /mnt/disks/ngs-data/subset_100
-for file in *.fna; do mv "$file" "${file%.fna}.fasta"; done
+./fix_poppunk_final.sh run-fixed /mnt/disks/ngs-data/subset_100 /mnt/disks/ngs-data/results_fixed
 ```
 
-## Quick Test
-If you want to test with a small dataset first:
-```bash
-# Create test data
-mkdir -p test_data
-# Copy 3-5 FASTA files to test_data/
-./fix_pipeline_errors.sh run-fixed test_data test_results
+## 📚 Based on Official Documentation
+
+Following: https://poppunk.bacpop.org/query_assignment.html
+
+**Correct PopPUNK workflow:**
+1. `poppunk --create-db` (database creation)
+2. `poppunk --fit-model --ref-db` (model fitting)  
+3. `poppunk --qc-db --ref-db poppunk_db` (QC - fixed reference)
+4. `poppunk_assign --db` (assignment - correct command)
+
+## 🎯 Expected Success
+
+When working, you'll see:
+```
+✅ Step 1: Database creation: Completed
+✅ Step 2: Model fitting: Completed  
+✅ Step 3: QC check: Completed
+✅ Step 4: Assignment using poppunk_assign: Completed
+🎉 SUCCESS: All PopPUNK fixes worked!
 ```
 
-The multi-channel output error is now fixed. The remaining issue is just making sure the input files are accessible with the correct extensions!
+**Your pipeline should now complete successfully!**
