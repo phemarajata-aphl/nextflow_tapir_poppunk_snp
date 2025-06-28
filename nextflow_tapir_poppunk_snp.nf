@@ -6,14 +6,16 @@
  * 
  * Steps:
  *   1. PopPUNK clustering of assembled genomes
- *   2. Split genomes by cluster
- *   3. For each cluster: run Panaroo → Gubbins → IQ-TREE
+ *   2. Prokka annotation of assemblies
+ *   3. Split annotated genomes by cluster
+ *   4. For each cluster: run Panaroo → Gubbins → IQ-TREE
  *
  * Requirements:
  *   - Nextflow (v23+)
  *   - Docker/Singularity containers
  *   - StaPH-B Docker images:
  *       staphb/poppunk:2.7.5 (PopPUNK clustering - latest)
+ *       staphb/prokka:1.14.6 (Genome annotation - latest)
  *       staphb/panaroo:1.5.2 (Pan-genome analysis - latest)
  *       staphb/gubbins:3.3.5 (Recombination removal - latest)
  *       staphb/iqtree2:2.4.0 (Phylogenetic tree building - latest)
@@ -265,35 +267,67 @@ process POPPUNK {
     """
 }
 
+process PROKKA {
+    tag "Prokka_${sample_id}"
+    container 'staphb/prokka:1.14.6'
+    publishDir "${params.resultsDir}/annotations", mode: 'copy'
+
+    input:
+    tuple val(sample_id), path(assembly)
+
+    output:
+    tuple val(sample_id), path("${sample_id}.gff")
+
+    script:
+    """
+    # Run Prokka annotation
+    prokka --outdir prokka_output \\
+           --prefix ${sample_id} \\
+           --cpus ${task.cpus} \\
+           --kingdom Bacteria \\
+           --genus Burkholderia \\
+           --species pseudomallei \\
+           --strain ${sample_id} \\
+           --locustag ${sample_id} \\
+           --force \\
+           ${assembly}
+    
+    # Copy the GFF file
+    cp prokka_output/${sample_id}.gff .
+    
+    echo "Prokka annotation completed for ${sample_id}"
+    """
+}
+
 process PANAROO {
     tag "Panaroo_cluster_${cluster_id}"
     container 'staphb/panaroo:1.5.2'
     publishDir "${params.resultsDir}/cluster_${cluster_id}/panaroo", mode: 'copy'
 
     input:
-    tuple val(cluster_id), path(assemblies)
+    tuple val(cluster_id), path(gff_files)
 
     output:
     tuple val(cluster_id), path('core_gene_alignment.aln')
 
     when:
-    assemblies.size() >= 3  // Need at least 3 genomes for meaningful analysis
+    gff_files.size() >= 3  // Need at least 3 genomes for meaningful analysis
 
     script:
     """
-    # Count the number of assembly files
-    assembly_count=\$(ls -1 *.{fasta,fa,fas} 2>/dev/null | wc -l)
-    echo "Processing cluster ${cluster_id} with \$assembly_count genomes"
+    # Count the number of GFF files
+    gff_count=\$(ls -1 *.gff 2>/dev/null | wc -l)
+    echo "Processing cluster ${cluster_id} with \$gff_count annotated genomes"
     
-    # Check if we have any assembly files
-    if [ \$assembly_count -eq 0 ]; then
-        echo "Error: No assembly files found in working directory"
+    # Check if we have any GFF files
+    if [ \$gff_count -eq 0 ]; then
+        echo "Error: No GFF files found in working directory"
         ls -la
         exit 1
     fi
     
     # Run Panaroo pan-genome analysis
-    panaroo -i *.{fasta,fa,fas} -o panaroo_output \\
+    panaroo -i *.gff -o panaroo_output \\
             -t ${task.cpus} --clean-mode strict --aligner mafft \\
             --remove-invalid-genes
     
@@ -411,8 +445,8 @@ workflow {
     clusters_csv = poppunk_results[0]  // First output is clusters.csv
     qc_report = poppunk_results[1]     // Second output is qc_report.txt (optional)
 
-    // Parse cluster assignments and group assemblies by cluster
-    cluster_assignments = clusters_csv
+    // Parse cluster assignments and create individual sample channels for annotation
+    individual_samples = clusters_csv
         .splitCsv(header: true)
         .map { row -> 
             // Try different possible column names for taxon/sample
@@ -441,15 +475,26 @@ workflow {
                 return null
             }
             
-            return tuple(cluster_id.toString(), assembly_file)
+            return tuple(base_name, assembly_file, cluster_id.toString())
         }
         .filter { it != null }  // Remove null entries
+
+    // Run Prokka annotation on each assembly
+    prokka_results = PROKKA(individual_samples.map { sample_id, assembly, cluster_id -> 
+        tuple(sample_id, assembly) 
+    })
+
+    // Group annotated genomes by cluster
+    cluster_assignments = individual_samples
+        .map { sample_id, assembly, cluster_id -> tuple(sample_id, cluster_id) }
+        .join(prokka_results)
+        .map { sample_id, cluster_id, gff_file -> tuple(cluster_id, gff_file) }
         .groupTuple()
-        .filter { cluster_id, files -> files.size() >= 3 }  // Only process clusters with 3+ genomes
+        .filter { cluster_id, gff_files -> gff_files.size() >= 3 }  // Only process clusters with 3+ genomes
 
     // Log cluster information
-    cluster_assignments.view { cluster_id, files -> 
-        "Cluster ${cluster_id}: ${files.size()} genomes"
+    cluster_assignments.view { cluster_id, gff_files -> 
+        "Cluster ${cluster_id}: ${gff_files.size()} annotated genomes"
     }
 
     // Run pan-genome analysis per cluster
@@ -464,5 +509,10 @@ workflow {
     // Summary
     IQTREE.out.view { cluster_id, tree_files ->
         "Completed analysis for cluster ${cluster_id}: ${tree_files.size()} output files"
+    }
+    
+    // Debug information
+    prokka_results.view { sample_id, gff_file ->
+        "Annotated ${sample_id}: ${gff_file}"
     }
 }
