@@ -484,10 +484,26 @@ workflow {
     clusters_csv = poppunk_results[0]  // First output is clusters.csv
     qc_report = poppunk_results[1]     // Second output is qc_report.txt (optional)
 
-    // Parse cluster assignments and group assemblies by cluster
+    // Create a comprehensive list of all actual assembly files for better matching
+    all_assembly_files = Channel.fromPath("${params.input}/*.{fasta,fa,fas}")
+        .map { file -> 
+            def basename = file.baseName
+            def name_variants = [
+                basename,
+                basename.replaceAll('_', '.'),  // Convert underscores to dots
+                basename.replaceAll('\\.', '_'), // Convert dots to underscores
+                basename.replaceAll('-', '_'),   // Convert hyphens to underscores
+                basename.replaceAll('_', '-')    // Convert underscores to hyphens
+            ]
+            return tuple(file, basename, name_variants)
+        }
+        .collect()
+
+    // Parse cluster assignments with enhanced file matching
     cluster_assignments = clusters_csv
         .splitCsv(header: true)
-        .map { row -> 
+        .combine(all_assembly_files)
+        .map { row, assembly_files -> 
             // Try different possible column names for taxon/sample
             def taxon_name = row.Taxon ?: row.taxon ?: row.Sample ?: row.sample ?: row.ID ?: row.id
             def cluster_id = row.Cluster ?: row.cluster ?: row.cluster_id
@@ -496,25 +512,90 @@ workflow {
                 error "Could not find taxon name or cluster ID in CSV row: ${row}"
             }
             
-            // Try to find the assembly file with different extensions
-            def assembly_file = null
+            // Clean up the taxon name and create variants for matching
             def base_name = taxon_name.toString().replaceAll(/\.(fasta|fa|fas)$/, '')
+            def taxon_variants = [
+                base_name,
+                base_name.replaceAll('_', '.'),  // Convert underscores to dots
+                base_name.replaceAll('\\.', '_'), // Convert dots to underscores
+                base_name.replaceAll('-', '_'),   // Convert hyphens to underscores
+                base_name.replaceAll('_', '-')    // Convert underscores to hyphens
+            ]
             
-            ['fasta', 'fa', 'fas'].each { ext ->
-                if (!assembly_file) {
-                    def candidate = file("${params.input}/${base_name}.${ext}")
-                    if (candidate.exists()) {
-                        assembly_file = candidate
+            // Find matching assembly file using multiple strategies
+            def matching_file = null
+            def match_strategy = "none"
+            
+            // Strategy 1: Exact basename match
+            if (!matching_file) {
+                matching_file = assembly_files.find { file_info -> 
+                    def file = file_info[0]
+                    def file_basename = file_info[1]
+                    return file_basename == base_name
+                }
+                if (matching_file) {
+                    matching_file = matching_file[0]
+                    match_strategy = "exact"
+                }
+            }
+            
+            // Strategy 2: Variant matching (underscores/dots/hyphens)
+            if (!matching_file) {
+                assembly_files.each { file_info ->
+                    def file = file_info[0]
+                    def file_basename = file_info[1]
+                    def file_variants = file_info[2]
+                    
+                    // Check if any taxon variant matches any file variant
+                    taxon_variants.each { taxon_variant ->
+                        file_variants.each { file_variant ->
+                            if (taxon_variant == file_variant && !matching_file) {
+                                matching_file = file
+                                match_strategy = "variant"
+                            }
+                        }
                     }
                 }
             }
             
-            if (!assembly_file) {
-                log.warn "Could not find assembly file for taxon: ${taxon_name}"
-                return null
+            // Strategy 3: Partial matching (contains)
+            if (!matching_file) {
+                matching_file = assembly_files.find { file_info -> 
+                    def file = file_info[0]
+                    def file_basename = file_info[1]
+                    return taxon_variants.any { variant -> 
+                        file_basename.contains(variant) || variant.contains(file_basename)
+                    }
+                }
+                if (matching_file) {
+                    matching_file = matching_file[0]
+                    match_strategy = "partial"
+                }
             }
             
-            return tuple(base_name, assembly_file, cluster_id.toString())
+            // Strategy 4: Fuzzy matching (remove common suffixes/prefixes)
+            if (!matching_file) {
+                def simplified_taxon = base_name.replaceAll(/_GCF_.*/, '').replaceAll(/_GCA_.*/, '')
+                matching_file = assembly_files.find { file_info -> 
+                    def file = file_info[0]
+                    def file_basename = file_info[1]
+                    def simplified_file = file_basename.replaceAll(/_GCF_.*/, '').replaceAll(/_GCA_.*/, '')
+                    return simplified_file.contains(simplified_taxon) || simplified_taxon.contains(simplified_file)
+                }
+                if (matching_file) {
+                    matching_file = matching_file[0]
+                    match_strategy = "fuzzy"
+                }
+            }
+            
+            if (matching_file) {
+                log.info "Successfully matched (${match_strategy}): ${base_name} -> ${matching_file.baseName} (cluster ${cluster_id})"
+                return tuple(matching_file.baseName, matching_file, cluster_id.toString())
+            } else {
+                log.warn "Could not find assembly file for taxon: ${base_name}"
+                log.debug "  Tried variants: ${taxon_variants}"
+                return null
+            }
         }
         .filter { it != null }  // Remove null entries
 
