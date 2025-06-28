@@ -68,6 +68,33 @@ if (params.help) {
 }
 
 // Process definitions
+process CREATE_FILE_MAP {
+    tag "Creating file mapping"
+    publishDir "${params.resultsDir}/debug", mode: 'copy'
+
+    input:
+    path assemblies
+
+    output:
+    path 'file_mapping.txt'
+
+    script:
+    """
+    echo "Creating comprehensive file mapping..."
+    echo "Filename\tBasename\tFullPath" > file_mapping.txt
+    
+    for file in *.{fasta,fa,fas}; do
+        if [ -f "\$file" ]; then
+            basename_val=\$(basename "\$file" | sed 's/\\.[^.]*\$//')
+            echo "\$file\t\$basename_val\t\$(pwd)/\$file" >> file_mapping.txt
+        fi
+    done
+    
+    echo "File mapping created:"
+    cat file_mapping.txt
+    """
+}
+
 process POPPUNK {
     tag "PopPUNK_clustering"
     container 'staphb/poppunk:2.7.5'
@@ -94,11 +121,13 @@ process POPPUNK {
     free -h || echo "Memory info not available"
     
     # Create a tab-separated list file for PopPUNK (sample_name<TAB>file_path)
+    # Use the basename without extension as the sample name to ensure consistency
     for file in *.{fasta,fa,fas}; do
         if [ -f "\$file" ]; then
-            # Extract sample name (remove extension)
+            # Extract sample name (remove extension) - this will be used as the taxon name
             sample_name=\$(basename "\$file" | sed 's/\\.[^.]*\$//')
             echo -e "\$sample_name\\t\$(pwd)/\$file" >> assembly_list.txt
+            echo "Mapping: \$sample_name -> \$file"
         fi
     done
     
@@ -111,6 +140,8 @@ process POPPUNK {
     echo "Found \$(wc -l < assembly_list.txt) assembly files"
     echo "First few entries in assembly list:"
     head -3 assembly_list.txt
+    echo "Sample of actual filenames found:"
+    ls *.{fasta,fa,fas} 2>/dev/null | head -5 || echo "No FASTA files found with these extensions"
     
     # Check dataset size and adjust parameters aggressively
     NUM_SAMPLES=\$(wc -l < assembly_list.txt)
@@ -253,7 +284,12 @@ process POPPUNK {
     echo "Total clusters found: \$(tail -n +2 clusters.csv | cut -f2 | sort -u | wc -l)"
     echo "Final memory status:"
     free -h || echo "Memory info not available"
-    head -5 clusters.csv
+    echo "First 10 lines of clusters.csv:"
+    head -10 clusters.csv
+    echo "Sample of taxon names from clusters.csv:"
+    tail -n +2 clusters.csv | cut -f1 | head -10
+    echo "All taxon names in clusters.csv:"
+    tail -n +2 clusters.csv | cut -f1 | sort
     
     # Summary of steps completed
     echo ""
@@ -438,6 +474,9 @@ workflow {
         }
         .collect()
 
+    // Create file mapping for debugging
+    file_mapping = CREATE_FILE_MAP(assemblies_ch)
+    
     // Run PopPUNK clustering
     poppunk_results = POPPUNK(assemblies_ch)
     
@@ -445,10 +484,15 @@ workflow {
     clusters_csv = poppunk_results[0]  // First output is clusters.csv
     qc_report = poppunk_results[1]     // Second output is qc_report.txt (optional)
 
-    // Parse cluster assignments and create individual sample channels for annotation
+    // Create a comprehensive list of all actual assembly files
+    all_assembly_files = Channel.fromPath("${params.input}/*.{fasta,fa,fas}")
+        .collect()
+
+    // Parse cluster assignments and match with files using a more robust approach
     individual_samples = clusters_csv
         .splitCsv(header: true)
-        .map { row -> 
+        .combine(all_assembly_files)
+        .map { row, assembly_files -> 
             // Try different possible column names for taxon/sample
             def taxon_name = row.Taxon ?: row.taxon ?: row.Sample ?: row.sample ?: row.ID ?: row.id
             def cluster_id = row.Cluster ?: row.cluster ?: row.cluster_id
@@ -457,25 +501,31 @@ workflow {
                 error "Could not find taxon name or cluster ID in CSV row: ${row}"
             }
             
-            // Try to find the assembly file with different extensions
-            def assembly_file = null
+            // Clean up the taxon name to match file naming patterns
             def base_name = taxon_name.toString().replaceAll(/\.(fasta|fa|fas)$/, '')
             
-            ['fasta', 'fa', 'fas'].each { ext ->
-                if (!assembly_file) {
-                    def candidate = file("${params.input}/${base_name}.${ext}")
-                    if (candidate.exists()) {
-                        assembly_file = candidate
-                    }
+            // Find matching assembly file
+            def matching_file = null
+            
+            // Try exact basename match first
+            matching_file = assembly_files.find { file -> 
+                file.baseName == base_name
+            }
+            
+            // If no exact match, try partial matches
+            if (!matching_file) {
+                matching_file = assembly_files.find { file -> 
+                    file.baseName.contains(base_name) || base_name.contains(file.baseName)
                 }
             }
             
-            if (!assembly_file) {
-                log.warn "Could not find assembly file for taxon: ${taxon_name}"
+            if (matching_file) {
+                log.info "Successfully matched: ${base_name} -> ${matching_file.baseName} (cluster ${cluster_id})"
+                return tuple(matching_file.baseName, matching_file, cluster_id.toString())
+            } else {
+                log.warn "Could not find assembly file for taxon: ${base_name}"
                 return null
             }
-            
-            return tuple(base_name, assembly_file, cluster_id.toString())
         }
         .filter { it != null }  // Remove null entries
 
