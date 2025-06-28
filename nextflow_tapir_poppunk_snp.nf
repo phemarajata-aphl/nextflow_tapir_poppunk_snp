@@ -281,7 +281,16 @@ process PANAROO {
 
     script:
     """
-    echo "Processing cluster ${cluster_id} with \${#assemblies[@]} genomes"
+    # Count the number of assembly files
+    assembly_count=\$(ls -1 *.{fasta,fa,fas} 2>/dev/null | wc -l)
+    echo "Processing cluster ${cluster_id} with \$assembly_count genomes"
+    
+    # Check if we have any assembly files
+    if [ \$assembly_count -eq 0 ]; then
+        echo "Error: No assembly files found in working directory"
+        ls -la
+        exit 1
+    fi
     
     # Run Panaroo pan-genome analysis
     panaroo -i *.{fasta,fa,fas} -o panaroo_output \\
