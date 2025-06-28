@@ -484,15 +484,10 @@ workflow {
     clusters_csv = poppunk_results[0]  // First output is clusters.csv
     qc_report = poppunk_results[1]     // Second output is qc_report.txt (optional)
 
-    // Create a comprehensive list of all actual assembly files
-    all_assembly_files = Channel.fromPath("${params.input}/*.{fasta,fa,fas}")
-        .collect()
-
-    // Parse cluster assignments and match with files using a more robust approach
-    individual_samples = clusters_csv
+    // Parse cluster assignments and group assemblies by cluster
+    cluster_assignments = clusters_csv
         .splitCsv(header: true)
-        .combine(all_assembly_files)
-        .map { row, assembly_files -> 
+        .map { row -> 
             // Try different possible column names for taxon/sample
             def taxon_name = row.Taxon ?: row.taxon ?: row.Sample ?: row.sample ?: row.ID ?: row.id
             def cluster_id = row.Cluster ?: row.cluster ?: row.cluster_id
@@ -501,41 +496,35 @@ workflow {
                 error "Could not find taxon name or cluster ID in CSV row: ${row}"
             }
             
-            // Clean up the taxon name to match file naming patterns
+            // Try to find the assembly file with different extensions
+            def assembly_file = null
             def base_name = taxon_name.toString().replaceAll(/\.(fasta|fa|fas)$/, '')
             
-            // Find matching assembly file
-            def matching_file = null
-            
-            // Try exact basename match first
-            matching_file = assembly_files.find { file -> 
-                file.baseName == base_name
-            }
-            
-            // If no exact match, try partial matches
-            if (!matching_file) {
-                matching_file = assembly_files.find { file -> 
-                    file.baseName.contains(base_name) || base_name.contains(file.baseName)
+            ['fasta', 'fa', 'fas'].each { ext ->
+                if (!assembly_file) {
+                    def candidate = file("${params.input}/${base_name}.${ext}")
+                    if (candidate.exists()) {
+                        assembly_file = candidate
+                    }
                 }
             }
             
-            if (matching_file) {
-                log.info "Successfully matched: ${base_name} -> ${matching_file.baseName} (cluster ${cluster_id})"
-                return tuple(matching_file.baseName, matching_file, cluster_id.toString())
-            } else {
-                log.warn "Could not find assembly file for taxon: ${base_name}"
+            if (!assembly_file) {
+                log.warn "Could not find assembly file for taxon: ${taxon_name}"
                 return null
             }
+            
+            return tuple(base_name, assembly_file, cluster_id.toString())
         }
         .filter { it != null }  // Remove null entries
 
     // Run Prokka annotation on each assembly
-    prokka_results = PROKKA(individual_samples.map { sample_id, assembly, cluster_id -> 
+    prokka_results = PROKKA(cluster_assignments.map { sample_id, assembly, cluster_id -> 
         tuple(sample_id, assembly) 
     })
 
     // Group annotated genomes by cluster
-    cluster_assignments = individual_samples
+    cluster_gff_assignments = cluster_assignments
         .map { sample_id, assembly, cluster_id -> tuple(sample_id, cluster_id) }
         .join(prokka_results)
         .map { sample_id, cluster_id, gff_file -> tuple(cluster_id, gff_file) }
@@ -543,12 +532,12 @@ workflow {
         .filter { cluster_id, gff_files -> gff_files.size() >= 3 }  // Only process clusters with 3+ genomes
 
     // Log cluster information
-    cluster_assignments.view { cluster_id, gff_files -> 
+    cluster_gff_assignments.view { cluster_id, gff_files -> 
         "Cluster ${cluster_id}: ${gff_files.size()} annotated genomes"
     }
 
     // Run pan-genome analysis per cluster
-    panaroo_results = PANAROO(cluster_assignments)
+    panaroo_results = PANAROO(cluster_gff_assignments)
 
     // Run recombination removal per cluster
     gubbins_results = GUBBINS(panaroo_results)
