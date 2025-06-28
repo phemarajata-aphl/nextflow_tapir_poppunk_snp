@@ -13,6 +13,17 @@ This pipeline performs:
 
 **Note**: This pipeline uses StaPH-B (State Public Health Bioinformatics) Docker containers, which are standardized, well-maintained containers specifically designed for public health bioinformatics workflows.
 
+## 🆕 Recent Updates
+
+**PopPUNK Commands Updated (Latest)**: The pipeline now follows the latest PopPUNK documentation with:
+- ✅ **poppunk_sketch** - Separate sketching step for better resource management
+- ✅ **poppunk_qc** - Integrated quality control checks
+- ✅ **poppunk_assign** - Updated assignment commands
+- ✅ **Fallback support** - Automatic fallback to legacy commands when needed
+- ✅ **Enhanced logging** - Step-by-step progress reporting
+
+See `POPPUNK_UPDATES_DOCUMENTATION.md` for detailed information about the updates.
+
 ## System Requirements
 
 ### Local Execution
@@ -42,6 +53,15 @@ This pipeline performs:
 
 # Then run the pipeline with Ubuntu Docker profile
 nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+```
+
+**For high-memory VMs (c4-highmem-192):**
+```bash
+# Use the optimized high-memory profile
+./run_updated_pipeline.sh run /path/to/assemblies /path/to/results
+
+# Or directly:
+nextflow run nextflow_tapir_poppunk_snp.nf -profile c4_highmem_192 --input ./assemblies --resultsDir ./results
 ```
 
 **For Google Cloud Batch execution:**
@@ -119,7 +139,8 @@ nextflow run nextflow_tapir_poppunk_snp.nf -profile google_batch --input gs://bu
 ```
 results/
 ├── poppunk/                    # PopPUNK clustering results
-│   └── clusters.csv           # Cluster assignments
+│   ├── clusters.csv           # Cluster assignments
+│   └── qc_report.txt          # Quality control report (new)
 ├── cluster_1/                 # Results for cluster 1
 │   ├── panaroo/              # Pan-genome analysis
 │   ├── gubbins/              # Recombination removal
@@ -237,16 +258,23 @@ nextflow run nextflow_tapir_poppunk_snp.nf --help
 ## Files Included
 
 ### Core Pipeline Files
-- `nextflow_tapir_poppunk_snp.nf` - Main Nextflow pipeline
+- `nextflow_tapir_poppunk_snp.nf` - Main Nextflow pipeline (updated with latest PopPUNK commands)
 - `nextflow.config` - Configuration with multiple execution profiles
 - `run_pipeline.sh` - Local execution script
+- `run_updated_pipeline.sh` - Updated pipeline execution script (new)
 - `run_google_batch.sh` - Google Cloud execution script
 - `setup_ubuntu_docker.sh` - Docker environment setup
 - `monitor_poppunk.sh` - PopPUNK progress monitoring
 
 ### Documentation
 - `README.md` - This comprehensive guide
+- `POPPUNK_UPDATES_DOCUMENTATION.md` - Detailed PopPUNK updates documentation (new)
+- `C4_HIGHMEM_PROFILE.md` - High-memory VM profile documentation
 - `GOOGLE_CLOUD_SETUP.md` - Google Cloud setup instructions
 - Additional troubleshooting guides for specific issues
+
+### Testing and Validation
+- `test_updated_poppunk.nf` - Test PopPUNK command availability (new)
+- `updated_poppunk_process.nf` - Standalone updated PopPUNK process (new)
 
 The pipeline is ready for production use on both local systems and Google Cloud Platform!
