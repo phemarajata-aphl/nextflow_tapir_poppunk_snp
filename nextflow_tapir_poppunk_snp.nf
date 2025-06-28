@@ -47,12 +47,16 @@ if (params.help) {
     
     Execution profiles:
         -profile ubuntu_docker    Local execution with Docker (Ubuntu optimized)
+        -profile c4_highmem_192   High-memory VM (192 vCPUs, 1,488 GB) on Debian
         -profile google_batch     Google Cloud Batch execution
         -profile standard         Default local execution
     
     Examples:
         # Local execution
         nextflow run nextflow_tapir_poppunk_snp.nf -profile ubuntu_docker --input ./assemblies --resultsDir ./results
+        
+        # High-memory VM execution (c4-highmem-192)
+        nextflow run nextflow_tapir_poppunk_snp.nf -profile c4_highmem_192 --input ./assemblies --resultsDir ./results
         
         # Google Cloud execution
         nextflow run nextflow_tapir_poppunk_snp.nf -profile google_batch \\
