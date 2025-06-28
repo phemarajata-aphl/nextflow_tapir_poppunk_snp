@@ -179,22 +179,50 @@ process POPPUNK {
         cp qc_results/qc_summary.txt qc_report.txt
     fi
     
-    # Step 4: Assign clusters using poppunk_assign (following latest documentation)
-    echo "Step 4: Assigning clusters using poppunk_assign..."
-    poppunk_assign --db poppunk_fit \\
-                   --query assembly_list.txt \\
-                   --output poppunk_assigned \\
-                   --threads ${task.cpus} \\
-                   --overwrite || {
-        echo "poppunk_assign failed, trying fallback with poppunk --use-model..."
+    # Step 4: Assign clusters - simplified approach
+    echo "Step 4: Assigning clusters..."
+    
+    # Try poppunk_assign first (if available)
+    if command -v poppunk_assign > /dev/null 2>&1; then
+        echo "Using poppunk_assign command..."
+        poppunk_assign --db poppunk_fit \\
+                       --query assembly_list.txt \\
+                       --output poppunk_assigned \\
+                       --threads ${task.cpus} \\
+                       --overwrite || ASSIGN_FAILED=true
+    else
+        echo "poppunk_assign not available, using alternative method..."
+        ASSIGN_FAILED=true
+    fi
+    
+    # If poppunk_assign failed or not available, use alternative approach
+    if [ "\$ASSIGN_FAILED" = "true" ]; then
+        echo "Using poppunk --use-model approach..."
         
-        # Fallback to poppunk --use-model if poppunk_assign is not available
+        # Create output directory
+        mkdir -p poppunk_assigned
+        
+        # Use the fitted model to assign clusters
         poppunk --use-model --ref-db poppunk_fit \\
-                --q-files assembly_list.txt \\
                 --output poppunk_assigned \\
                 --threads ${task.cpus} \\
-                --overwrite || exit 1
-    }
+                --overwrite || {
+            echo "poppunk --use-model failed, checking for existing cluster files..."
+            
+            # Look for cluster files in the fitted model directory
+            if [ -f poppunk_fit/poppunk_fit_clusters.csv ]; then
+                echo "Found clusters in fitted model, copying..."
+                cp poppunk_fit/poppunk_fit_clusters.csv poppunk_assigned/
+            elif [ -f poppunk_db/poppunk_db_clusters.csv ]; then
+                echo "Found clusters in database, copying..."
+                cp poppunk_db/poppunk_db_clusters.csv poppunk_assigned/
+            else
+                echo "No cluster files found. Available files:"
+                find . -name "*.csv" -ls
+                exit 1
+            fi
+        }
+    fi
     
     # Find and copy the cluster assignment file
     find poppunk_assigned -name "*clusters.csv" -exec cp {} clusters.csv \\;
