@@ -73,11 +73,20 @@ case $COMMAND in
             exit 1
         fi
         
-        # Check for FASTA files
-        FASTA_COUNT=$(find "$INPUT_DIR" -name "*.fasta" -o -name "*.fa" -o -name "*.fas" | wc -l)
+        # Check for FASTA files with better debugging
+        FASTA_COUNT=$(find "$INPUT_DIR" -name "*.fasta" -o -name "*.fa" -o -name "*.fas" 2>/dev/null | wc -l)
         if [ $FASTA_COUNT -eq 0 ]; then
             echo "Error: No FASTA files found in $INPUT_DIR"
             echo "Supported extensions: .fasta, .fa, .fas"
+            echo ""
+            echo "Debugging information:"
+            echo "Directory contents (first 10 files):"
+            ls "$INPUT_DIR" | head -10 || echo "Cannot list directory"
+            echo ""
+            echo "File extensions present:"
+            ls "$INPUT_DIR" | sed 's/.*\.//' | sort | uniq -c | head -10 || echo "Cannot analyze extensions"
+            echo ""
+            echo "Use './fix_pipeline_errors.sh debug-input $INPUT_DIR' for detailed debugging"
             exit 1
         fi
         

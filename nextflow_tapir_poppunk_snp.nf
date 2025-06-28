@@ -375,13 +375,25 @@ workflow {
         error "Input directory does not exist: ${params.input}"
     }
 
-    // Input channel for assemblies
+    // Input channel for assemblies with debugging
+    log.info "Looking for FASTA files in: ${params.input}"
+    log.info "Search pattern: ${params.input}/*.{fasta,fa,fas}"
+    
     assemblies_ch = Channel.fromPath("${params.input}/*.{fasta,fa,fas}")
-        .ifEmpty { error "No FASTA files found in ${params.input}" }
+        .ifEmpty { 
+            log.error "No FASTA files found in ${params.input}"
+            log.error "Checked extensions: .fasta, .fa, .fas"
+            log.error "Please verify the input directory exists and contains FASTA files"
+            error "No FASTA files found in ${params.input}" 
+        }
         .collect()
 
     // Run PopPUNK clustering
-    clusters_csv = POPPUNK(assemblies_ch)
+    poppunk_results = POPPUNK(assemblies_ch)
+    
+    // Extract just the clusters.csv file from the multi-output
+    clusters_csv = poppunk_results[0]  // First output is clusters.csv
+    qc_report = poppunk_results[1]     // Second output is qc_report.txt (optional)
 
     // Parse cluster assignments and group assemblies by cluster
     cluster_assignments = clusters_csv
